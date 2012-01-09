@@ -1,0 +1,39 @@
+TODO : ALL
+
+==== Le Serveur ====
+connexion tcp
+exemple de paquets entrants
+    "2:l" le joueur 2 veux aller à gauche
+    "1:ru" le joueur 1 veux aller à droite et sauter
+exemple de paquet sortant
+    "600:400:15:(100:50):(450:0):(300:150)" 
+        le jeux fait 600x400 px, avec un fillet de 15px de haut
+        le joueur 1 est à 50px du sol et 100px du bord gauche
+        le joueur 2 est sur le sol, à 450px du bors gauche
+        la balle est au millieu du jeu, à 150px du sol
+        
+Le serveur joue le jeu en boucle, avec ou sans clients (il pourrait faire une 
+pause si y a aucun client)
+
+Le serveur accepte tout les clients qui veulent s'y connecter, si un client
+désside d'incarner les deux joueur en même temps il lui suffit d'envoyer les
+paquets pour chaqu'un des deux joueurs.
+
+Le serveur envoie en continue à tout les clients le minimum d'informations 
+nessesaires pour dessiner le jeu, par consequent c'est à lui de faire la totalité
+des calculs de cinématique.
+
+==== Le Client ====
+Il doit offrir un interface simple pour jouer à 1 ou 2 joueur.
+Si l'on souhaite jouer à 1 joueur, il faut pouvoir choisir quel joueur jouer (1 ou 2).
+
+Le client affiche le jeu en cours sur le serveur, un client doit pouvoir servir d'observateur (recoit les paquet mais n'en envoie pas).
+
+Les dimentions du jeu sont paramétré sur le serveur (600x400 par exemple), 
+parcontre les dimentions des deux demi-cercles (joueurs) et de la balle sont 
+définit ici :
+    rayon d'un demi-cercle = 60px
+    rayon de la balle = 15px
+
+
+Idée : http://oneslime.net/
