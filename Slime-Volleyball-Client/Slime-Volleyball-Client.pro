@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += network
 
 TARGET = Slime-Volleyball-Client
 TEMPLATE = app
