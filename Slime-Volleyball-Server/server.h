@@ -15,6 +15,10 @@ public:
     explicit Server(QObject *parent = 0);
     ~Server();
 
+    void play();
+    void setPort(quint16 port);
+    World *world();
+
 private slots:
     void newClient();
     void dataReceived();

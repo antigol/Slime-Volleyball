@@ -24,10 +24,15 @@ int main(int argc, char *argv[])
     Server server;
 
     // todo: donner les arguments
-    cout << parser.get("port", 2222).toInt() << endl;
+    server.setPort(parser.get("port", 2222).toInt());
+    server.world()->setgValue(10);
+    server.world()->setheight(400);
+    server.world()->setwidth(600);
+    server.world()->setnetHeight(30);
+    server.world()->setplayerSpeed(5);
 
     // todo: lancer le serveur
-    server.start();
+    server.play();
 
     return a.exec();
 }

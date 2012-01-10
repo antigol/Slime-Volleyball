@@ -144,6 +144,17 @@ void World::move(double dt, World::Movements p0, World::Movements p1)
 
 }
 
+void World::reset()
+{
+    _playersPos[0] = QPointF(_width/4.0, 0);
+    _playersPos[1] = QPointF(3.0*_width/4.0, 0);
+    _tvol[0] = _tvol[1] = -1;
+    _ballSpeedInit = QPointF(0, 0);
+    _ballTVol = 0;
+    _ballPosInit = QPointF(_width/4.0, _height/2.0);
+    _score[0] = _score[1] = 0;
+}
+
 double World::length(QPointF p)
 {
     return std::sqrt(p.x()*p.x() + p.y()*p.y());

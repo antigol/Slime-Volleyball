@@ -2,6 +2,7 @@
 #include <QTime>
 #include <QCoreApplication>
 #include <QDataStream>
+#include <QDebug>
 
 Server::Server(QObject *parent) :
     QThread(parent)
@@ -18,17 +19,23 @@ Server::~Server()
     delete _world;
 }
 
-void Server::run()
+void Server::play()
 {
     // initialisation
     if (_server->listen(QHostAddress::Any, _portNumber)) {
-        qDebug("serveur démarré sur le port : %d", _portNumber);
+        qDebug() << QString::fromUtf8("serveur demarre sur le port : ") << _portNumber;
         connect(_server, SIGNAL(newConnection()), this, SLOT(newClient()));
     } else {
-        qDebug("serveur n'a pas pu démarrer sur le port : %d", _portNumber);
+        qDebug() << "serveur n'a pas pu demarrer sur le port : " << _portNumber;
         QCoreApplication::exit(-1);
     }
 
+    world()->reset();
+    start();
+}
+
+void Server::run()
+{
     QTime time;
     time.start();
 
@@ -55,6 +62,15 @@ void Server::run()
         out << (float)_world->playerActualPosition(1).y();
         out << (float)_world->actualScore(0);
         out << (float)_world->actualScore(1);
+
+        qDebug() << "bx" << (float)_world->ballActualPosition().x();
+        qDebug() << "by" << (float)_world->ballActualPosition().y();
+        qDebug() << "p1" << (float)_world->playerActualPosition(0).x();
+        qDebug() << "p1" << (float)_world->playerActualPosition(0).y();
+        qDebug() << "p2" << (float)_world->playerActualPosition(1).x();
+        qDebug() << "p2" << (float)_world->playerActualPosition(1).y();
+        qDebug() << "s1" << (float)_world->actualScore(0);
+        qDebug() << "s2" << (float)_world->actualScore(1);
         out.device()->seek(0);
         out << (quint16)(packet.size() - sizeof (quint16));
 
@@ -70,7 +86,7 @@ void Server::run()
 void Server::newClient()
 {
     QTcpSocket *newClient = _server->nextPendingConnection();
-    qDebug("Nouveau client : %s", newClient->peerAddress().toString().toAscii().data());
+    qDebug() << "Nouveau client : " << newClient->peerAddress().toString();
 
     // Création du paquet PKT_INIT
     QByteArray packet;
@@ -116,7 +132,17 @@ void Server::clientOut()
     if (socket == 0)
         return;
 
-    qDebug("Nouveau client : %s", socket->peerAddress().toString().toAscii().data());
+    qDebug() << "Client deco : " << socket->peerAddress().toString();
     _clients.removeOne(socket);
     socket->deleteLater();
+}
+
+void Server::setPort(quint16 port)
+{
+    _portNumber = port;
+}
+
+World * Server::world()
+{
+    return _world;
 }

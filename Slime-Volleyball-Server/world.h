@@ -18,6 +18,7 @@ public:
 
     World();
     void move(double dt, enum Movements p1, enum Movements p2);
+    void reset();
     double width() const;
     double height() const;
     double netHeight() const;
