@@ -18,7 +18,21 @@ public:
 
     World();
     void move(double dt, enum Movements p1, enum Movements p2);
+    double width() const;
+    double height() const;
+    double netHeight() const;
     double playerSpeed() const;
+    double gValue() const;
+
+    void setwidth(double x);
+    void setheight(double x);
+    void setnetHeight(double x);
+    void setplayerSpeed(double x);
+    void setgValue(double x);
+
+    QPointF ballActualPosition() const;
+    QPointF playerActualPosition(int i) const;
+    int actualScore(int i) const;
 
 private:
     double length(QPointF p);
@@ -31,8 +45,12 @@ private:
 
     QPointF _playersPos[2];
     double _tvol[2];
+    int _score[2];
 
     // parameters
+    double _width;
+    double _height;
+    double _netHeight;
     double _pSpeed;
     double _gValue;
 };
