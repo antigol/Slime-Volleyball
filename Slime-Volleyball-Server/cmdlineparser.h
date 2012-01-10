@@ -9,6 +9,7 @@ class CmdLineParser
 public:
     CmdLineParser(const QStringList &arguments);
     QVariant get(const QByteArray &key, const QVariant &defaultValue);
+    bool isSet(const QByteArray &key);
 
 private:
     QStringList _args;

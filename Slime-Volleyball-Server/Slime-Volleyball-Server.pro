@@ -18,7 +18,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    cmdlineparser.cpp
+    cmdlineparser.cpp \
+    server.cpp \
+    world.cpp
 
 HEADERS += \
-    cmdlineparser.h
+    cmdlineparser.h \
+    server.h \
+    world.h

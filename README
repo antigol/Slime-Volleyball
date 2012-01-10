@@ -2,16 +2,27 @@ TODO : ALL
 
 ==== Le Serveur ====
 connexion tcp
-exemple de paquets entrants
-    "2:l" le joueur 2 veux aller à gauche
-    "1:ru" le joueur 1 veux aller à droite et sauter
-exemple de paquet sortant
-    "600:400:15:(100:50):(450:0):(300:150)" 
-        le jeux fait 600x400 px, avec un fillet de 15px de haut
-        le joueur 1 est à 50px du sol et 100px du bord gauche
-        le joueur 2 est sur le sol, à 450px du bors gauche
-        la balle est au millieu du jeu, à 150px du sol
-        
+
+1) paquets client -> serveur
+taille du paquet : 32bit (4octets)
+format : (int16 playerNumber):(int16 keys)  (on pourra rajouter un int8 pour des
+                                             option comme par exemple pause ou
+                                             reset)
+playerNumber : joueur 1 = 0, joueur 2 = 1,...
+masques pour keys :
+        Left = 0x1,
+        Right = 0x2,
+        Up = 0x4
+Si le joueur 2 veux aller à droite et sauter : 0x0001 0006
+
+2) paquets serveur -> client
+ Deux sortes de paquets. Un pour initialiser les paramètres globaux
+ L'autre pour informer sur les positions des objets le long du jeu.
+format : (int16 la taille du paquet en octets):(float32 paramètre1):(float32 
+    paramètre2):(float32 paramètre3):..... etc
+init : largeur, hauteur, fillet, ...
+play : joueur1, joueur2, balle, score_joueur1, score_joueur2, ...
+    
 Le serveur joue le jeu en boucle, avec ou sans clients (il pourrait faire une 
 pause si y a aucun client)
 
