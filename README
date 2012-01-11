@@ -5,9 +5,8 @@ connexion tcp
 
 1) paquets client -> serveur
 taille du paquet : 32bit (4octets)
-format : (int16 playerNumber):(int16 keys)  (on pourra rajouter un int8 pour des
-                                             option comme par exemple pause ou
-                                             reset)
+format : (int16 keysP1):(int16 keysP2)
+(on pourra rajouter un int8 pour des option comme par exemple pause ou reset)
 playerNumber : joueur 1 = 0, joueur 2 = 1,...
 masques pour keys :
         Left = 0x1,

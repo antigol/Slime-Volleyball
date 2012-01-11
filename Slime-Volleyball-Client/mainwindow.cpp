@@ -24,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(_socket, SIGNAL(connected()), this, SLOT(connectedSlot()));
     connect(_socket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
     menuBar()->addAction("Connect...", this, SLOT(connectSlot()));
+
+    startTimer(20);
 }
 
 MainWindow::~MainWindow()
@@ -56,18 +58,20 @@ void MainWindow::dataReceived()
     if (_socket->bytesAvailable() < _packetSize)
         return;
 
+    if (_socket->bytesAvailable() > _packetSize) {
+        qDebug() << "sa va trop vite !!";
+    }
+
     if (_packetSize == 24) {
         in >> _width;
         in >> _height;
         in >> _netHeight;
         _packetSize = 0;
 
-        // redessiner
         _scene->setSceneRect(0, 0, _width, _height);
         _view->setSceneRect(0, 0, _width, _height);
         _boxItem->setRect(0, 0, _width, _height);
         _netItem->setLine(_width/2.0, 0, _width/2.0, _netHeight);
-        redraw();
     }
 
     if (_packetSize == 52) {
@@ -81,8 +85,6 @@ void MainWindow::dataReceived()
         in >> _score2;
         _packetSize = 0;
 
-        // redessiné
-        redraw();
         //        qDebug() << _ballX;
         //        qDebug() << _ballY;
         //        qDebug() << _player1X;
@@ -119,33 +121,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     if (event->isAutoRepeat())
         return;
 
-    bool send1 = false;
-    bool send2 = false;
-
     switch (event->key()) {
     case Qt::Key_Left:
-        _keys1 |= Left;
-        send1 = true;
+        _keys2 |= Left;
         break;
     case Qt::Key_Right:
-        _keys1 |= Right;
-        send1 = true;
+        _keys2 |= Right;
         break;
     case Qt::Key_Up:
-        _keys1 |= Up;
-        send1 = true;
+        _keys2 |= Up;
         break;
     case Qt::Key_A:
-        _keys2 |= Left;
-        send2 = true;
+        _keys1 |= Left;
         break;
     case Qt::Key_D:
-        _keys2 |= Right;
-        send2 = true;
+        _keys1 |= Right;
         break;
     case Qt::Key_W:
-        _keys2 |= Up;
-        send2 = true;
+        _keys1 |= Up;
         break;
     default:
         break;
@@ -153,20 +146,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
     qDebug() << "keys=" << _keys1;
 
-    if (send1) {
-        QByteArray packet;
-        QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)0;
-        out << (quint16)_keys1;
-        _socket->write(packet);
-    }
-    if (send2) {
-        QByteArray packet;
-        QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)1;
-        out << (quint16)_keys2;
-        _socket->write(packet);
-    }
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+    out << (quint16)_keys1;
+    out << (quint16)_keys2;
+    _socket->write(packet);
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event)
@@ -174,33 +158,24 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
     if (event->isAutoRepeat())
         return;
 
-    bool send1 = false;
-    bool send2 = false;
-
     switch (event->key()) {
     case Qt::Key_Left:
-        _keys1 &= ~Left;
-        send1 = true;
+        _keys2 &= ~Left;
         break;
     case Qt::Key_Right:
-        _keys1 &= ~Right;
-        send1 = true;
+        _keys2 &= ~Right;
         break;
     case Qt::Key_Up:
-        _keys1 &= ~Up;
-        send1 = true;
+        _keys2 &= ~Up;
         break;
     case Qt::Key_A:
-        _keys2 &= ~Left;
-        send2 = true;
+        _keys1 &= ~Left;
         break;
     case Qt::Key_D:
-        _keys2 &= ~Right;
-        send2 = true;
+        _keys1 &= ~Right;
         break;
     case Qt::Key_W:
-        _keys2 &= ~Up;
-        send2 = true;
+        _keys1 &= ~Up;
         break;
     default:
         break;
@@ -208,19 +183,15 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
 
     qDebug() << "keys=" << _keys1;
 
-    if (send1) {
-        QByteArray packet;
-        QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)0;
-        out << (quint16)_keys1;
-        _socket->write(packet);
-    }
-    if (send2) {
-        QByteArray packet;
-        QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)1;
-        out << (quint16)_keys2;
-        _socket->write(packet);
-    }
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+    out << (quint16)_keys1;
+    out << (quint16)_keys2;
+    _socket->write(packet);
+}
+
+void MainWindow::timerEvent(QTimerEvent *)
+{
+    redraw();
 }
 

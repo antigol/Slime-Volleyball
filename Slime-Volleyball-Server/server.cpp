@@ -45,7 +45,7 @@ void Server::run()
 
     _stopServer = false;
     while (_stopServer == false) {
-        msleep(20 - time.elapsed());
+        msleep(qMax(20 - time.elapsed(), 5));
 
         _runMutex.lock();
         double dt = (double)time.restart() / 1000.0;
@@ -70,14 +70,14 @@ void Server::run()
         out.device()->seek(0);
         out << (quint16)(packet.size() - sizeof (quint16));
 
-//        qDebug() << "bx" << _world->ballActualPosition().x();
-//        qDebug() << "by" << _world->ballActualPosition().y();
-//        qDebug() << "p1" << _world->playerActualPosition(0).x();
-//        qDebug() << "p1" << _world->playerActualPosition(0).y();
-//        qDebug() << "p2" << _world->playerActualPosition(1).x();
-//        qDebug() << "p2" << _world->playerActualPosition(1).y();
-//        qDebug() << "s1" << _world->actualScore(0);
-//        qDebug() << "s2" << _world->actualScore(1);
+        //        qDebug() << "bx" << _world->ballActualPosition().x();
+        //        qDebug() << "by" << _world->ballActualPosition().y();
+        //        qDebug() << "p1" << _world->playerActualPosition(0).x();
+        //        qDebug() << "p1" << _world->playerActualPosition(0).y();
+        //        qDebug() << "p2" << _world->playerActualPosition(1).x();
+        //        qDebug() << "p2" << _world->playerActualPosition(1).y();
+        //        qDebug() << "s1" << _world->actualScore(0);
+        //        qDebug() << "s2" << _world->actualScore(1);
 
         for (int i = 0; i < _clients.size(); ++i) {
             _clients[i]->write(packet);
@@ -120,22 +120,25 @@ void Server::dataReceived()
     if (socket == 0)
         return;
 
-    if (socket->bytesAvailable() < (qint64)(2 * sizeof (quint16)))
+    qint64 packetSize = 2 * sizeof (quint16);
+    if (socket->bytesAvailable() < packetSize)
         return;
 
-    QDataStream in(socket);
-    quint16 playerNumber;
-    quint16 keys;
-    in >> playerNumber;
-    in >> keys;
+    QByteArray packet = socket->readAll();
+    packet = packet.right(packetSize);
 
-    qDebug() << playerNumber << " move by" << keys;
+    QDataStream in(&packet, QIODevice::ReadOnly);
+    quint16 keys1;
+    quint16 keys2;
+    in >> keys1;
+    in >> keys2;
 
-    if (playerNumber < 2) {
-        _runMutex.lock();
-        _playersKeys[playerNumber] = (World::Movements)keys;
-        _runMutex.unlock();
-    }
+    qDebug() << "k1 :" << keys1 << " k2 :" << keys2;
+
+    _runMutex.lock();
+    _playersKeys[0] = (World::Movements)keys1;
+    _playersKeys[1] = (World::Movements)keys2;
+    _runMutex.unlock();
 }
 
 void Server::clientOut()

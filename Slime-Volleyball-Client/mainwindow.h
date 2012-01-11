@@ -34,6 +34,7 @@ private:
     void initdraw();
     void redraw();
 
+    void timerEvent(QTimerEvent *);
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *);
 

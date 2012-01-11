@@ -64,14 +64,14 @@ void World::move(double dt, Movements playersMov[])
 
         if (dist <= WORLD_BALL_RADIUS + WORLD_SLIME_RADIUS) {
             // referentiel : playeri
-            QPointF s = ballActualSpeed - playersSpeed[i];
+            QPointF s = ballActualSpeed;// - playersSpeed[i];
             double factor = dotProduct(s, u);
             // Le facteur doit être negatif, s'il est positif c'est un bug
             if (factor < 0) {
                 // debond sans perte d'energie
                 s -= 2.0 * factor * u;
                 // referentiel : world
-                _ballSpeedInit = s + playersSpeed[i];
+                _ballSpeedInit = s;// + playersSpeed[i];
                 _ballPosInit = _ballActualPos;
                 _ballTVol = 0;
             }
