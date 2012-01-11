@@ -6,37 +6,40 @@ World::World()
 {
 }
 
-void World::move(double dt, World::Movements p0, World::Movements p1)
+void World::move(double dt, Movements playersMov[])
 {
-    Movements playersMov[2] = {p0, p1};
-
     // déplace les objets de dt
-    QPointF dx(dt * _pSpeed, 0);
+    double dx = dt * _pSpeed;
 
     // mouvements des joueurs
     QPointF playersSpeed[2];
 
     for (int i = 0; i < 2; ++i) {
-        if (playersMov[i] & Left) {
-            _playersPos[i] -= dx;
+        if ((playersMov[i] & Left) &&
+                ((i == 0 && _playersPos[i].x() > WORLD_SLIME_RADIUS)
+                 || (i == 1 && _playersPos[i].x() > _width/2.0 + WORLD_SLIME_RADIUS))) {
+            _playersPos[i].rx() -= dx;
             playersSpeed[i].rx() = -_pSpeed;
-        }
-        if (playersMov[i] & Right) {
-            _playersPos[i] += dx;
+        } else if ((playersMov[i] & Right) &&
+                   ((i == 0 && _playersPos[i].x() < _width/2.0 - WORLD_SLIME_RADIUS)
+                    || (i == 1 && _playersPos[i].x() < _width - WORLD_SLIME_RADIUS))){
+            _playersPos[i].rx() += dx;
             playersSpeed[i].rx() = _pSpeed;
+        } else {
+            playersSpeed[i].rx() = 0;
         }
-        if (playersMov[i] & Up) {
+        if ((playersMov[i] & Up) && _tvol[i] < 0) {
             // se prépare à voler
             _tvol[i] = 0;
         }
 
-        if (_tvol[0] >= 0) {
-            _tvol[0] += dt;
-            double y = _pSpeed * _tvol[0] - 0.5 * _gValue * _tvol[0] * _tvol[0];
-            double vy = _pSpeed - _gValue * _tvol[0];
+        if (_tvol[i] >= 0) {
+            _tvol[i] += dt;
+            double y = _pSpeed * _tvol[i] - 0.5 * _gValue * _tvol[i] * _tvol[i];
+            double vy = _pSpeed - _gValue * _tvol[i];
             if (y <= 0) {
                 y = vy = 0;
-                _tvol[0] = -1;
+                _tvol[i] = -1;
             }
             _playersPos[i].ry() = y;
             playersSpeed[i].ry() = vy;
@@ -77,9 +80,12 @@ void World::move(double dt, World::Movements p0, World::Movements p1)
 
     // collisions balle <-> bords
     if (_ballActualPos.x() <= WORLD_BALL_RADIUS && ballActualSpeed.x() < 0) {
+        // modifie la valeur de la vitesse initiale pour v0
         _ballSpeedInit.rx() = -ballActualSpeed.x();
         _ballSpeedInit.ry() = ballActualSpeed.y();
+        // modifie la position initiale de la balle pour le calcul de barabole
         _ballPosInit = _ballActualPos;
+        // réinitialise le temps de vol pour la formule : v0*t-1/2g*t²
         _ballTVol = 0;
     }
     if (_ballActualPos.x() >= _width - WORLD_BALL_RADIUS && ballActualSpeed.x() > 0) {
@@ -124,7 +130,7 @@ void World::move(double dt, World::Movements p0, World::Movements p1)
     }
 
     // collision de la balle avec le sol
-    if (_ballActualPos.y() <= 0) {
+    if (_ballActualPos.y() <= WORLD_BALL_RADIUS) {
 
         if (_ballActualPos.x() < _width/2.0) {
             _score[1]++;

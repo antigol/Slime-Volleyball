@@ -10,6 +10,8 @@ Server::Server(QObject *parent) :
     _world = new World();
 
     _server = new QTcpServer(this);
+
+    _playersKeys[0] = _playersKeys[1] = World::DontMove;
 }
 
 Server::~Server()
@@ -23,14 +25,16 @@ void Server::play()
 {
     // initialisation
     if (_server->listen(QHostAddress::Any, _portNumber)) {
-        qDebug() << QString::fromUtf8("serveur demarre sur le port : ") << _portNumber;
+        qDebug() << "server start to listen on port : " << _portNumber;
         connect(_server, SIGNAL(newConnection()), this, SLOT(newClient()));
     } else {
-        qDebug() << "serveur n'a pas pu demarrer sur le port : " << _portNumber;
+        qDebug() << "server can't start on port : " << _portNumber;
         QCoreApplication::exit(-1);
     }
 
     world()->reset();
+
+    // que le jeu commence
     start();
 }
 
@@ -39,14 +43,15 @@ void Server::run()
     QTime time;
     time.start();
 
+    _stopServer = false;
     while (_stopServer == false) {
-        msleep(25 - time.elapsed());
+        msleep(20 - time.elapsed());
 
         _runMutex.lock();
         double dt = (double)time.restart() / 1000.0;
 
         // calcule les nouvelles positions
-        _world->move(dt, World::DontMove, World::DontMove);
+        _world->move(dt, _playersKeys);
 
         _runMutex.unlock();
 
@@ -54,25 +59,25 @@ void Server::run()
         QByteArray packet;
         QDataStream out(&packet, QIODevice::WriteOnly);
         out << (quint16)0;
-        out << (float)_world->ballActualPosition().x();
-        out << (float)_world->ballActualPosition().y();
-        out << (float)_world->playerActualPosition(0).x();
-        out << (float)_world->playerActualPosition(0).y();
-        out << (float)_world->playerActualPosition(1).x();
-        out << (float)_world->playerActualPosition(1).y();
-        out << (float)_world->actualScore(0);
-        out << (float)_world->actualScore(1);
-
-        qDebug() << "bx" << (float)_world->ballActualPosition().x();
-        qDebug() << "by" << (float)_world->ballActualPosition().y();
-        qDebug() << "p1" << (float)_world->playerActualPosition(0).x();
-        qDebug() << "p1" << (float)_world->playerActualPosition(0).y();
-        qDebug() << "p2" << (float)_world->playerActualPosition(1).x();
-        qDebug() << "p2" << (float)_world->playerActualPosition(1).y();
-        qDebug() << "s1" << (float)_world->actualScore(0);
-        qDebug() << "s2" << (float)_world->actualScore(1);
+        out << _world->ballActualPosition().x();
+        out << _world->ballActualPosition().y();
+        out << _world->playerActualPosition(0).x();
+        out << _world->playerActualPosition(0).y();
+        out << _world->playerActualPosition(1).x();
+        out << _world->playerActualPosition(1).y();
+        out << (quint16)_world->actualScore(0);
+        out << (quint16)_world->actualScore(1);
         out.device()->seek(0);
         out << (quint16)(packet.size() - sizeof (quint16));
+
+//        qDebug() << "bx" << _world->ballActualPosition().x();
+//        qDebug() << "by" << _world->ballActualPosition().y();
+//        qDebug() << "p1" << _world->playerActualPosition(0).x();
+//        qDebug() << "p1" << _world->playerActualPosition(0).y();
+//        qDebug() << "p2" << _world->playerActualPosition(1).x();
+//        qDebug() << "p2" << _world->playerActualPosition(1).y();
+//        qDebug() << "s1" << _world->actualScore(0);
+//        qDebug() << "s2" << _world->actualScore(1);
 
         for (int i = 0; i < _clients.size(); ++i) {
             _clients[i]->write(packet);
@@ -81,6 +86,7 @@ void Server::run()
 
     // arrêt
     _server->close();
+    qDebug("Server stopped");
 }
 
 void Server::newClient()
@@ -92,11 +98,13 @@ void Server::newClient()
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
     out << (quint16)0;
-    out << (float)_world->width();
-    out << (float)_world->height();
-    out << (float)_world->netHeight();
+    out << _world->width();
+    out << _world->height();
+    out << _world->netHeight();
     out.device()->seek(0);
-    out << (quint16)(packet.size() - sizeof (quint16));
+    quint16 packetSize = packet.size() - sizeof (quint16);
+    out << packetSize;
+    qDebug() << "packetSize = " << packetSize;
 
     newClient->write(packet);
 
@@ -121,8 +129,12 @@ void Server::dataReceived()
     in >> playerNumber;
     in >> keys;
 
+    qDebug() << playerNumber << " move by" << keys;
+
     if (playerNumber < 2) {
-        _playersKeys[playerNumber] = keys;
+        _runMutex.lock();
+        _playersKeys[playerNumber] = (World::Movements)keys;
+        _runMutex.unlock();
     }
 }
 

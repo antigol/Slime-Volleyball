@@ -17,6 +17,10 @@ int main(int argc, char *argv[])
         cout << "Slime Volleyball Server" << endl;
         cout << "--port=PORT_NUMBER" << endl;
         cout << "--gval=ACCELERATION_VALUE" << endl;
+        cout << "--width=WIDTH_PX" << endl;
+        cout << "--height=HEIGHT_PX" << endl;
+        cout << "--netheight=NET_HEIGHT_PX" << endl;
+        cout << "--playerSpeed=PLAYER_SPEED" << endl;
         return 0;
     }
 
@@ -25,11 +29,11 @@ int main(int argc, char *argv[])
 
     // todo: donner les arguments
     server.setPort(parser.get("port", 2222).toInt());
-    server.world()->setgValue(10);
-    server.world()->setheight(400);
-    server.world()->setwidth(600);
-    server.world()->setnetHeight(30);
-    server.world()->setplayerSpeed(5);
+    server.world()->setgValue(parser.get("gval", 120.0).toDouble());
+    server.world()->setheight(parser.get("height", 400).toInt());
+    server.world()->setwidth(parser.get("width", 600).toInt());
+    server.world()->setnetHeight(parser.get("netheight", 50).toInt());
+    server.world()->setplayerSpeed(parser.get("playerSpeed", 120.0).toDouble());
 
     // todo: lancer le serveur
     server.play();

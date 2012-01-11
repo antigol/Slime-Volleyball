@@ -32,7 +32,7 @@ private:
     QTcpServer *_server;
     QList<QTcpSocket *> _clients;
     bool _stopServer;
-    int _playersKeys[2];
+    World::Movements _playersKeys[2];
 
     quint16 _portNumber;
 };
