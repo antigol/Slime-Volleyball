@@ -22,21 +22,21 @@ L'autre pour informer sur les positions des objets le long du jeu.
 format : Paquet PLAY
 Type        Valeur
 int16       52 (taille de ce qui suit en octet)
-float32     position de la balle en x
-float32                             y
-float32     position du joueur 1 en x
-float32                             y
-float32                        2 en x
-float32                             y
+double64     position de la balle en x
+double64                             y
+double64     position du joueur 1 en x
+double64                             y
+double64                        2 en x
+double64                             y
 int16       score joueur 1
 int16                    2
 
 format : Paquet INIT
 Type        Valeur
 int16       24
-float32     largeur du jeu
-float32     hauteur du jeu
-float32     hauteur du filet
+double64     largeur du jeu
+double64     hauteur du jeu
+double64     hauteur du filet
 
 Le serveur joue le jeu en boucle, avec ou sans clients (il pourrait faire une 
 pause si y a aucun client)
