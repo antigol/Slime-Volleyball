@@ -44,16 +44,18 @@ private:
 
     quint16 _packetSize;
 
-    float _width;
-    float _height;
-    float _netHeight;
+    double _width;
+    double _height;
+    double _netHeight;
+    double _ballradius;
+    double _slimeradius;
 
-    float _ballX;
-    float _ballY;
-    float _player1X;
-    float _player1Y;
-    float _player2X;
-    float _player2Y;
+    double _ballX;
+    double _ballY;
+    double _player1X;
+    double _player1Y;
+    double _player2X;
+    double _player2Y;
     quint16 _score1;
     quint16 _score2;
 

@@ -30,10 +30,12 @@ void Server::play()
     } else {
         qDebug() << "server can't start on port : " << _portNumber;
         QCoreApplication::exit(-1);
+        return;
     }
 
     world()->reset();
 
+    _timerId = startTimer(23);
     // que le jeu commence
     start();
 }
@@ -43,50 +45,57 @@ void Server::run()
     QTime time;
     time.start();
 
+    World::Movements playersKeys[2];
+
     _stopServer = false;
     while (_stopServer == false) {
-        msleep(qMax(20 - time.elapsed(), 5));
+        msleep(qMax(5 - time.elapsed(), 2));
 
         _runMutex.lock();
         double dt = (double)time.restart() / 1000.0;
-
-        // calcule les nouvelles positions
-        _world->move(dt, _playersKeys);
-
+        for (int i = 0; i < 2; ++i)
+            playersKeys[i] = _playersKeys[i];
         _runMutex.unlock();
 
-        // Création du paquet PKT_PLAY
-        QByteArray packet;
-        QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)0;
-        out << _world->ballActualPosition().x();
-        out << _world->ballActualPosition().y();
-        out << _world->playerActualPosition(0).x();
-        out << _world->playerActualPosition(0).y();
-        out << _world->playerActualPosition(1).x();
-        out << _world->playerActualPosition(1).y();
-        out << (quint16)_world->actualScore(0);
-        out << (quint16)_world->actualScore(1);
-        out.device()->seek(0);
-        out << (quint16)(packet.size() - sizeof (quint16));
-
-        //        qDebug() << "bx" << _world->ballActualPosition().x();
-        //        qDebug() << "by" << _world->ballActualPosition().y();
-        //        qDebug() << "p1" << _world->playerActualPosition(0).x();
-        //        qDebug() << "p1" << _world->playerActualPosition(0).y();
-        //        qDebug() << "p2" << _world->playerActualPosition(1).x();
-        //        qDebug() << "p2" << _world->playerActualPosition(1).y();
-        //        qDebug() << "s1" << _world->actualScore(0);
-        //        qDebug() << "s2" << _world->actualScore(1);
-
-        for (int i = 0; i < _clients.size(); ++i) {
-            _clients[i]->write(packet);
-        }
+        // calcule les nouvelles positions
+        _world->move(dt, playersKeys);
     }
 
     // arrêt
+    killTimer(_timerId);
     _server->close();
     qDebug("Server stopped");
+}
+
+void Server::timerEvent(QTimerEvent *)
+{
+    // Création du paquet PKT_PLAY
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+    out << (quint16)0;
+    out << _world->ballActualPosition().x();
+    out << _world->ballActualPosition().y();
+    out << _world->playerActualPosition(0).x();
+    out << _world->playerActualPosition(0).y();
+    out << _world->playerActualPosition(1).x();
+    out << _world->playerActualPosition(1).y();
+    out << (quint16)_world->actualScore(0);
+    out << (quint16)_world->actualScore(1);
+    out.device()->seek(0);
+    out << (quint16)(packet.size() - sizeof (quint16));
+
+    //        qDebug() << "bx" << _world->ballActualPosition().x();
+    //        qDebug() << "by" << _world->ballActualPosition().y();
+    //        qDebug() << "p1" << _world->playerActualPosition(0).x();
+    //        qDebug() << "p1" << _world->playerActualPosition(0).y();
+    //        qDebug() << "p2" << _world->playerActualPosition(1).x();
+    //        qDebug() << "p2" << _world->playerActualPosition(1).y();
+    //        qDebug() << "s1" << _world->actualScore(0);
+    //        qDebug() << "s2" << _world->actualScore(1);
+
+    for (int i = 0; i < _clients.size(); ++i) {
+        _clients[i]->write(packet);
+    }
 }
 
 void Server::newClient()
@@ -101,6 +110,8 @@ void Server::newClient()
     out << _world->width();
     out << _world->height();
     out << _world->netHeight();
+    out << _world->ballRadius();
+    out << _world->slimeRadius();
     out.device()->seek(0);
     quint16 packetSize = packet.size() - sizeof (quint16);
     out << packetSize;

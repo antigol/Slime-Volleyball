@@ -26,6 +26,7 @@ private slots:
 
 private:
     void run();
+    void timerEvent(QTimerEvent *);
 
     World *_world;
     QMutex _runMutex;
@@ -35,6 +36,7 @@ private:
     World::Movements _playersKeys[2];
 
     quint16 _portNumber;
+    int _timerId;
 };
 
 #endif // SERVER_H

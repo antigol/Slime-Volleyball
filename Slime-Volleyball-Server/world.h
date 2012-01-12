@@ -3,9 +3,6 @@
 
 #include <QPointF>
 
-#define WORLD_BALL_RADIUS 15
-#define WORLD_SLIME_RADIUS 30
-
 class World
 {
 public:
@@ -24,12 +21,18 @@ public:
     double netHeight() const;
     double playerSpeed() const;
     double gValue() const;
+    double enTransFacor() const;
+    double ballRadius() const;
+    double slimeRadius() const;
 
     void setwidth(double x);
     void setheight(double x);
     void setnetHeight(double x);
     void setplayerSpeed(double x);
     void setgValue(double x);
+    void setEnTransFacor(double x);
+    void setBallRadius(double x);
+    void setSlimeRadius(double x);
 
     QPointF ballActualPosition() const;
     QPointF playerActualPosition(int i) const;
@@ -54,6 +57,9 @@ private:
     double _netHeight;
     double _pSpeed;
     double _gValue;
+    double _enTransFactor;
+    double _ballRadius;
+    double _slimeRadius;
 };
 
 #endif // WORLD_H

@@ -58,20 +58,21 @@ void MainWindow::dataReceived()
     if (_socket->bytesAvailable() < _packetSize)
         return;
 
-    if (_socket->bytesAvailable() > _packetSize) {
-        qDebug() << "sa va trop vite !!";
-    }
-
-    if (_packetSize == 24) {
+    if (_packetSize == 40) {
         in >> _width;
         in >> _height;
         in >> _netHeight;
+        in >> _ballradius;
+        in >> _slimeradius;
         _packetSize = 0;
 
         _scene->setSceneRect(0, 0, _width, _height);
         _view->setSceneRect(0, 0, _width, _height);
         _boxItem->setRect(0, 0, _width, _height);
         _netItem->setLine(_width/2.0, 0, _width/2.0, _netHeight);
+        _ballItem->setRect(-_ballradius, -_ballradius, 2.0*_ballradius, 2.0*_ballradius);
+        _slime1Item->setRect(-_slimeradius, -_slimeradius, 2.0*_slimeradius, 2.0*_slimeradius);
+        _slime2Item->setRect(-_slimeradius, -_slimeradius, 2.0*_slimeradius, 2.0*_slimeradius);
     }
 
     if (_packetSize == 52) {
@@ -95,16 +96,19 @@ void MainWindow::dataReceived()
         //        qDebug() << _score2;
     }
 
-
+    if (_socket->bytesAvailable() > _packetSize) {
+        qDebug() << "sa va trop vite !!";
+        dataReceived();
+    }
 }
 
 void MainWindow::initdraw()
 {
     _boxItem = _scene->addRect(QRectF(), QPen(QBrush(Qt::black), 2));
     _netItem = _scene->addLine(QLineF(), QPen(QBrush(Qt::black), 3));
-    _ballItem = _scene->addEllipse(QRectF(-15, -15, 30, 30), QPen(Qt::black), QBrush(Qt::yellow));
-    _slime1Item = _scene->addEllipse(QRectF(-30, -30, 60, 60), QPen(Qt::black), QBrush(Qt::red));
-    _slime2Item = _scene->addEllipse(QRectF(-30, -30, 60, 60), QPen(Qt::black), QBrush(Qt::blue));
+    _ballItem = _scene->addEllipse(QRectF(), QPen(Qt::black), QBrush(Qt::yellow));
+    _slime1Item = _scene->addEllipse(QRectF(), QPen(Qt::black), QBrush(Qt::red));
+    _slime2Item = _scene->addEllipse(QRectF(), QPen(Qt::black), QBrush(Qt::blue));
 }
 
 void MainWindow::redraw()
