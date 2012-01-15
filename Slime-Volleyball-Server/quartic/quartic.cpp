@@ -26,6 +26,11 @@ main(int , char *[])
 
   //Now we test the implementation
 
+  a = -5.93295878967653;
+  b = 7.86666666666667;
+  c = 2.76871410184905;
+  d = 16;
+
   double roots[4];
   size_t rootcount = quarticSolve(a, b, c, d,
 				  roots[0], roots[1], 

@@ -15,6 +15,7 @@ public:
 
     World();
     void move(double dt, enum Movements playersKeys[]);
+    void exactMove(double dt, enum Movements playersKeys[]);
     void reset();
 
 private:
@@ -22,12 +23,12 @@ private:
     double dotProduct(QPointF p1, QPointF p2);
 
     // Collision entre deux cercles dans le plan
-    double collisionBallBall(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y, double R1,
-                             double r2x, double r2y, double v2x, double v2y, double a2x, double a2y, double R2);
+    double collisionBallBall(const QPointF &r1, const QPointF &v1, const QPointF& a1, double R1,
+                             const QPointF &r2, const QPointF &v2, const QPointF& a2, double R2);
     // Collision entre un point et un segment vertical (s1y <= s2y)
-    double collisionPointVSeg(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y,
+    double collisionPointVSeg(const QPointF &r1, const QPointF &v1, const QPointF& a1,
                               double sx, double s1y, double s2y);
-    double collisionPointHSeg(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y,
+    double collisionPointHSeg(const QPointF &r1, const QPointF &v1, const QPointF& a1,
                               double sy, double s1x, double s2x);
 
     QPointF _ballSpeedInit;
@@ -41,6 +42,7 @@ public:
     QPointF _ballActualSpeed;
     QPointF _playersActualPos[2];
     QPointF _playersActualSpeed[2];
+    QPointF _playersActualAccel[2];
     int _score[2];
 
 
@@ -48,7 +50,7 @@ public:
     double _width;
     double _height;
     double _netHeight;
-    double _pSpeed;
+    double _playerSpeed;
     double _gValue;
     double _enTransFactor;
     double _ballRadius;

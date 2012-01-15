@@ -76,12 +76,14 @@ void MainWindow::dataReceived()
     }
 
     if (_packetSize == 52) {
+        in.setFloatingPointPrecision(QDataStream::SinglePrecision);
         in >> _ballX;
         in >> _ballY;
         in >> _player1X;
         in >> _player1Y;
         in >> _player2X;
         in >> _player2Y;
+        in.skipRawData(sizeof (float) * 6);
         in >> _score1;
         in >> _score2;
         _packetSize = 0;
