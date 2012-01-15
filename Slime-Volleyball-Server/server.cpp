@@ -72,15 +72,22 @@ void Server::timerEvent(QTimerEvent *)
     // Création du paquet PKT_PLAY
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
+    out.setFloatingPointPrecision(QDataStream::SinglePrecision);
     out << (quint16)0;
-    out << _world->ballActualPosition().x();
-    out << _world->ballActualPosition().y();
-    out << _world->playerActualPosition(0).x();
-    out << _world->playerActualPosition(0).y();
-    out << _world->playerActualPosition(1).x();
-    out << _world->playerActualPosition(1).y();
-    out << (quint16)_world->actualScore(0);
-    out << (quint16)_world->actualScore(1);
+    out << _world->_ballActualPos.x();
+    out << _world->_ballActualPos.y();
+    out << _world->_playersActualPos[0].x();
+    out << _world->_playersActualPos[0].y();
+    out << _world->_playersActualPos[1].x();
+    out << _world->_playersActualPos[1].y();
+    out << _world->_ballActualSpeed.x();
+    out << _world->_ballActualSpeed.y();
+    out << _world->_playersActualSpeed[0].x();
+    out << _world->_playersActualSpeed[0].y();
+    out << _world->_playersActualSpeed[1].x();
+    out << _world->_playersActualSpeed[1].y();
+    out << (quint16)_world->_score[0];
+    out << (quint16)_world->_score[1];
     out.device()->seek(0);
     out << (quint16)(packet.size() - sizeof (quint16));
 
@@ -107,11 +114,11 @@ void Server::newClient()
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
     out << (quint16)0;
-    out << _world->width();
-    out << _world->height();
-    out << _world->netHeight();
-    out << _world->ballRadius();
-    out << _world->slimeRadius();
+    out << _world->_width;
+    out << _world->_height;
+    out << _world->_netHeight;
+    out << _world->_ballRadius;
+    out << _world->_slimeRadius;
     out.device()->seek(0);
     quint16 packetSize = packet.size() - sizeof (quint16);
     out << packetSize;

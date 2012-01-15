@@ -6,31 +6,43 @@ World::World()
 {
 }
 
+/*
+  collision pour la balle :
+    * le plafond
+    * le mur gauche
+    * le mur droite
+    * le sol
+    * le fillet à gauche (VSeg - ballRadius)
+    * le fillet à droite (VSeg + ballRadius)
+    * le sommet du fillet (balle de rayon nul)
+    * le joueur 1
+    * le joueur 2
+
+*/
+
 void World::move(double dt, Movements playersMov[])
 {
     // déplace les objets de dt
     double dx = dt * _pSpeed;
 
-    // mouvements des joueurs
-    QPointF playersSpeed[2];
-
     for (int i = 0; i < 2; ++i) {
         if ((playersMov[i] & Left) &&
-                ((i == 0 && _playersPos[i].x() > _slimeRadius)
-                 || (i == 1 && _playersPos[i].x() > _width/2.0 + _slimeRadius))) {
-            _playersPos[i].rx() -= dx;
-            playersSpeed[i].rx() = -_pSpeed;
+                ((i == 0 && _playersActualPos[i].x() > _slimeRadius)
+                 || (i == 1 && _playersActualPos[i].x() > _width/2.0 + _slimeRadius))) {
+            _playersActualPos[i].rx() -= dx;
+            _playersActualSpeed[i].rx() = -_pSpeed;
         } else if ((playersMov[i] & Right) &&
-                   ((i == 0 && _playersPos[i].x() < _width/2.0 - _slimeRadius)
-                    || (i == 1 && _playersPos[i].x() < _width - _slimeRadius))){
-            _playersPos[i].rx() += dx;
-            playersSpeed[i].rx() = _pSpeed;
+                   ((i == 0 && _playersActualPos[i].x() < _width/2.0 - _slimeRadius)
+                    || (i == 1 && _playersActualPos[i].x() < _width - _slimeRadius))){
+            _playersActualPos[i].rx() += dx;
+            _playersActualSpeed[i].rx() = _pSpeed;
         } else {
-            playersSpeed[i].rx() = 0;
+            _playersActualSpeed[i].rx() = 0;
         }
         if ((playersMov[i] & Up) && _tvol[i] < 0) {
             // se prépare à voler
             _tvol[i] = 0;
+            _playersActualSpeed[i].ry() = _pSpeed;
         }
 
         if (_tvol[i] >= 0) {
@@ -41,8 +53,8 @@ void World::move(double dt, Movements playersMov[])
                 y = vy = 0;
                 _tvol[i] = -1;
             }
-            _playersPos[i].ry() = y;
-            playersSpeed[i].ry() = vy;
+            _playersActualPos[i].ry() = y;
+            _playersActualSpeed[i].ry() = vy;
         }
 
     }
@@ -52,26 +64,25 @@ void World::move(double dt, Movements playersMov[])
     // calcul de la position exacte (parabole)
     _ballActualPos.rx() = _ballPosInit.x() + _ballSpeedInit.x() * _ballTVol;
     _ballActualPos.ry() = _ballPosInit.y() + _ballSpeedInit.y() * _ballTVol - 0.5 * _gValue * _ballTVol * _ballTVol;
-    QPointF ballActualSpeed;
-    ballActualSpeed.rx() = _ballSpeedInit.x();
-    ballActualSpeed.ry() = _ballSpeedInit.y() - _gValue * _ballTVol;
+    _ballActualSpeed.rx() = _ballSpeedInit.x();
+    _ballActualSpeed.ry() = _ballSpeedInit.y() - _gValue * _ballTVol;
 
     // collisions balle <-> joueurs
     for (int i = 0; i < 2; ++i) {
-        QPointF u = _ballActualPos - _playersPos[i];
+        QPointF u = _ballActualPos - _playersActualPos[i];
         double dist = length(u);
         u /= dist;
 
         if (dist <= _ballRadius + _slimeRadius) {
             // referentiel : playeri
-            QPointF s = ballActualSpeed - playersSpeed[i] * _enTransFactor;
+            QPointF s = _ballActualSpeed - _playersActualSpeed[i] * _enTransFactor;
             double factor = dotProduct(s, u);
             // Le facteur doit être negatif, s'il est positif c'est un bug
             if (factor < 0) {
                 // debond sans perte d'energie
                 s -= 2.0 * factor * u;
                 // referentiel : world
-                _ballSpeedInit = s + playersSpeed[i] * _enTransFactor;
+                _ballSpeedInit = s + _playersActualSpeed[i] * _enTransFactor;
                 _ballPosInit = _ballActualPos;
                 _ballTVol = 0;
             }
@@ -79,28 +90,28 @@ void World::move(double dt, Movements playersMov[])
     }
 
     // collisions balle <-> bords
-    if (_ballActualPos.x() <= _ballRadius && ballActualSpeed.x() < 0) {
+    if (_ballActualPos.x() <= _ballRadius && _ballActualSpeed.x() < 0) {
         // modifie la valeur de la vitesse initiale pour v0
-        _ballSpeedInit.rx() = -ballActualSpeed.x();
-        _ballSpeedInit.ry() = ballActualSpeed.y();
+        _ballSpeedInit.rx() = -_ballActualSpeed.x();
+        _ballSpeedInit.ry() = _ballActualSpeed.y();
         _ballSpeedInit *= 0.95; // les murs sont mous
         // modifie la position initiale de la balle pour le calcul de barabole
         _ballPosInit = _ballActualPos;
         // réinitialise le temps de vol pour la formule : v0*t-1/2g*t²
         _ballTVol = 0;
     }
-    if (_ballActualPos.x() >= _width - _ballRadius && ballActualSpeed.x() > 0) {
-        _ballSpeedInit.rx() = -ballActualSpeed.x();
-        _ballSpeedInit.ry() = ballActualSpeed.y();
+    if (_ballActualPos.x() >= _width - _ballRadius && _ballActualSpeed.x() > 0) {
+        _ballSpeedInit.rx() = -_ballActualSpeed.x();
+        _ballSpeedInit.ry() = _ballActualSpeed.y();
         _ballPosInit = _ballActualPos;
         _ballSpeedInit *= 0.95;
         _ballTVol = 0;
     }
 
     // collision au plafond
-    if (_ballActualPos.y() >= _height - _ballRadius && ballActualSpeed.y() > 0) {
-        _ballSpeedInit.rx() = ballActualSpeed.x();
-        _ballSpeedInit.ry() = -ballActualSpeed.y();
+    if (_ballActualPos.y() >= _height - _ballRadius && _ballActualSpeed.y() > 0) {
+        _ballSpeedInit.rx() = _ballActualSpeed.x();
+        _ballSpeedInit.ry() = -_ballActualSpeed.y();
         _ballSpeedInit *= 0.95;
         _ballPosInit = _ballActualPos;
         _ballTVol = 0;
@@ -108,15 +119,15 @@ void World::move(double dt, Movements playersMov[])
 
     // collisions avec le filet
     if (QRectF(_width/2.0-_ballRadius, 0, _ballRadius, _netHeight).contains(_ballActualPos)
-            && ballActualSpeed.x() > 0) {
-        _ballSpeedInit.rx() = -ballActualSpeed.x();
-        _ballSpeedInit.ry() = ballActualSpeed.y();
+            && _ballActualSpeed.x() > 0) {
+        _ballSpeedInit.rx() = -_ballActualSpeed.x();
+        _ballSpeedInit.ry() = _ballActualSpeed.y();
         _ballPosInit = _ballActualPos;
         _ballTVol = 0;
     } else if (QRectF(_width/2.0, 0, _ballRadius, _netHeight).contains(_ballActualPos)
-               && ballActualSpeed.x() < 0) {
-        _ballSpeedInit.rx() = -ballActualSpeed.x();
-        _ballSpeedInit.ry() = ballActualSpeed.y();
+               && _ballActualSpeed.x() < 0) {
+        _ballSpeedInit.rx() = -_ballActualSpeed.x();
+        _ballSpeedInit.ry() = _ballActualSpeed.y();
         _ballPosInit = _ballActualPos;
         _ballTVol = 0;
     } else {
@@ -126,7 +137,7 @@ void World::move(double dt, Movements playersMov[])
         u /= dist;
 
         if (dist <= _ballRadius) {
-            QPointF s = ballActualSpeed;
+            QPointF s = _ballActualSpeed;
             double factor = dotProduct(s, u);
             // Le facteur doit être negatif, s'il est positif c'est que la balle est déjà entrain de repartir
             if (factor < 0) {
@@ -154,8 +165,8 @@ void World::move(double dt, Movements playersMov[])
         _ballTVol = 0;
 
         // on remet les joueurs en place
-        _playersPos[0] = QPointF(_width/4.0, 0);
-        _playersPos[1] = QPointF(3.0*_width/4.0, 0);
+        _playersActualPos[0] = QPointF(_width/4.0, 0);
+        _playersActualPos[1] = QPointF(3.0*_width/4.0, 0);
         _tvol[0] = _tvol[1] = -1;
     }
 
@@ -163,8 +174,8 @@ void World::move(double dt, Movements playersMov[])
 
 void World::reset()
 {
-    _playersPos[0] = QPointF(_width/4.0, 0);
-    _playersPos[1] = QPointF(3.0*_width/4.0, 0);
+    _playersActualPos[0] = QPointF(_width/4.0, 0);
+    _playersActualPos[1] = QPointF(3.0*_width/4.0, 0);
     _tvol[0] = _tvol[1] = -1;
     _ballSpeedInit = QPointF(0, 0);
     _ballTVol = 0;
@@ -182,105 +193,10 @@ double World::dotProduct(QPointF p1, QPointF p2)
     return p1.x()*p2.x() + p1.y()*p2.y();
 }
 
-double World::width() const
-{
-    return _width;
-}
-
-double World::height() const
-{
-    return _height;
-}
-
-double World::netHeight() const
-{
-    return _netHeight;
-}
-
-double World::playerSpeed() const
-{
-    return _pSpeed;
-}
-
-double World::gValue() const
-{
-    return _gValue;
-}
-
-QPointF World::ballActualPosition() const
-{
-    return _ballActualPos;
-}
-
-QPointF World::playerActualPosition(int i) const
-{
-    return _playersPos[i];
-}
-
-int World::actualScore(int i) const
-{
-    return _score[i];
-}
-
-void World::setwidth(double x)
-{
-    _width = x;
-}
-
-void World::setheight(double x)
-{
-    _height = x;
-}
-
-void World::setnetHeight(double x)
-{
-    _netHeight = x;
-}
-
-void World::setplayerSpeed(double x)
-{
-    _pSpeed = x;
-}
-
-void World::setgValue(double x)
-{
-    _gValue = x;
-}
-
-double World::enTransFacor() const
-{
-    return _enTransFactor;
-}
-
-double World::ballRadius() const
-{
-    return _ballRadius;
-}
-
-double World::slimeRadius() const
-{
-    return _slimeRadius;
-}
-
-void World::setEnTransFacor(double x)
-{
-    _enTransFactor = x;
-}
-
-void World::setBallRadius(double x)
-{
-    _ballRadius = x;
-}
-
-void World::setSlimeRadius(double x)
-{
-    _slimeRadius = x;
-}
-
 #include "quartic/quartic.hpp"
 
-double World::collision(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y, double R1,
-                        double r2x, double r2y, double v2x, double v2y, double a2x, double a2y, double R2)
+double World::collisionBallBall(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y, double R1,
+                                double r2x, double r2y, double v2x, double v2y, double a2x, double a2y, double R2)
 {
     double drx = r2x - r1x;
     double dry = r2y - r1y;
@@ -298,7 +214,7 @@ double World::collision(double r1x, double r1y, double v1x, double v1y, double a
 
     double root[4] = {-1.0};
 
-    // (e = 0) => (a1 = a2) => (a = 0)
+    // (e = 0) -> (a1 = a2) -> (a = 0)
     if (e == 0.0) {
         // b t² + c t + d = 0
         if (!magnet::math::quadSolve(d, c, b, root[0], root[1]))
@@ -321,4 +237,58 @@ double World::collision(double r1x, double r1y, double v1x, double v1y, double a
     }
 
     return r;
+}
+
+double World::collisionPointVSeg(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y, double sx, double s1y, double s2y)
+{
+    double a = a1x / 2.0;
+    double b = v1x;
+    double c = r1x - sx;
+
+    double t1, t2;
+
+    if (!magnet::math::quadSolve(c, b, a, t1, t2))
+        return -1.0;
+
+    double y1 = r1y + v1y * t1 + 0.5 * a1y * t1*t1;
+    double y2 = r1y + v1y * t2 + 0.5 * a1y * t2*t2;
+
+    // dehors du segment
+    if (y1 < s1y || y1 > s2y) {
+        t1 = -1.0;
+    }
+    if (y2 < s1y || y2 > s2y) {
+        t2 = -1.0;
+    }
+
+    if (t1 > 0.0 && (t1 < t2 || t2 < 0.0))
+        return t1;
+    return t2;
+}
+
+double World::collisionPointHSeg(double r1x, double r1y, double v1x, double v1y, double a1x, double a1y, double sy, double s1x, double s2x)
+{
+    double a = a1y / 2.0;
+    double b = v1y;
+    double c = r1y - sy;
+
+    double t1, t2;
+
+    if (!magnet::math::quadSolve(c, b, a, t1, t2))
+        return -1.0;
+
+    double x1 = r1x + v1x * t1 + 0.5 * a1x * t1*t1;
+    double x2 = r1x + v1x * t2 + 0.5 * a1x * t2*t2;
+
+    // dehors du segment
+    if (x1 < s1x || x1 > s2x) {
+        t1 = -1.0;
+    }
+    if (x2 < s1x || x2 > s2x) {
+        t2 = -1.0;
+    }
+
+    if (t1 > 0.0 && (t1 < t2 || t2 < 0.0))
+        return t1;
+    return t2;
 }
