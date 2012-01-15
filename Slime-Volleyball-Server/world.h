@@ -16,7 +16,7 @@ public:
     World();
     void move(double dt, enum Movements playersKeys[]);
     void exactMove(double dt, enum Movements playersKeys[]);
-    void reset();
+    void reset(int team = -1);
 
 private:
     double length(QPointF p);

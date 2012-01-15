@@ -58,9 +58,10 @@ void Server::run()
         _runMutex.unlock();
 
         // calcule les nouvelles positions
-//        QTime t; t.start();
+        QTime t; t.start();
+
         _world->exactMove(dt, playersKeys);
-//        qDebug() << t.elapsed() << "ms";
+        qDebug() << t.elapsed() << "ms";
     }
 
     // arrêt
@@ -93,8 +94,8 @@ void Server::timerEvent(QTimerEvent *)
     out.device()->seek(0);
     out << (quint16)(packet.size() - sizeof (quint16));
 
-    qDebug() << "bx" << _world->_ballActualPos.x();
-    qDebug() << "by" << _world->_ballActualPos.y();
+//    qDebug() << "bx" << _world->_ballActualPos.x();
+//    qDebug() << "by" << _world->_ballActualPos.y();
     //        qDebug() << "p1" << _world->playerActualPosition(0).x();
     //        qDebug() << "p1" << _world->playerActualPosition(0).y();
     //        qDebug() << "p2" << _world->playerActualPosition(1).x();

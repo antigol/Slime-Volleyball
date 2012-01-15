@@ -7,7 +7,7 @@ World::World()
 {
 }
 
-void World::reset()
+void World::reset(int team)
 {
     _playersActualPos[0] = QPointF(_width/4.0, 0);
     _playersActualPos[1] = QPointF(3.0*_width/4.0, 0);
@@ -15,10 +15,14 @@ void World::reset()
     _tvol[0] = _tvol[1] = -1;
     _ballSpeedInit = QPointF(0, 0);
     _ballTVol = 0;
-    _ballPosInit = QPointF(_width/4.0, _height/2.0);
+    if (team == 0)
+        _ballPosInit = QPointF(_width/4.0, _height/2.0);
+    else
+        _ballPosInit = QPointF(3.0*_width/4.0, _height/2.0);
     _ballActualPos = _ballPosInit;
     _ballActualSpeed = _ballSpeedInit;
-    _score[0] = _score[1] = 0;
+    if (team == -1)
+        _score[0] = _score[1] = 0;
 }
 
 void World::move(double dt, Movements playersMov[])
@@ -252,6 +256,26 @@ void World::exactMove(double dt, World::Movements playersMov[])
         index = 2;
         tt = tmp;
     }
+    // 3 : mur gauche
+    tmp = collisionPointVSeg(_ballActualPos, _ballActualSpeed, ballActualAccel, _ballRadius, 0, _height);
+    if (_ballActualSpeed.x() < 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 3;
+        tt = tmp;
+    }
+    // 4 : mur  droite
+    tmp = collisionPointVSeg(_ballActualPos, _ballActualSpeed, ballActualAccel, _width - _ballRadius, 0, _height);
+    if (_ballActualSpeed.x() > 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 4;
+        tt = tmp;
+    }
+    // 5 : le sol
+    tmp = collisionPointHSeg(_ballActualPos, _ballActualSpeed, ballActualAccel, _ballRadius, 0, _width);
+    if (_ballActualSpeed.y() < 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 5;
+        tt = tmp;
+    }
+
+
     for (int i = 0; i < 2; ++i) {
         // 11 : joueur sol + R
         tmp = collisionPointHSeg(_playersActualPos[i], _playersActualSpeed[i], _playersActualAccel[i], 0, 0, _width);
@@ -294,19 +318,36 @@ void World::exactMove(double dt, World::Movements playersMov[])
             u /= dist;
 
             // referentiel : playeri
-            QPointF s = _ballActualSpeed - _playersActualSpeed[index] * _enTransFactor;
+            // fixme:playerspeed
+            QPointF s = _ballActualSpeed - _playersActualSpeed[index] /** _enTransFactor*/;
             double factor = dotProduct(s, u);
             // Le facteur doit être negatif, s'il est positif c'est un bug
             if (factor < 0) {
                 // debond sans perte d'energie
                 s -= 2.0 * factor * u;
                 // referentiel : world
-                _ballActualSpeed = s + _playersActualSpeed[index] * _enTransFactor;
+                _ballActualSpeed = s + _playersActualSpeed[index] /** _enTransFactor*/;
+            } else {
+
             }
         }
         if (index == 2) {
             // plafond
             _ballActualSpeed.ry() *= -1.0;
+        }
+        if (index == 3 || index == 4) {
+            // mur gauche droite
+            _ballActualSpeed.rx() *= -1.0;
+        }
+        if (index == 5) {
+            // sol
+            if (_ballActualPos.x() < _width / 2.0) {
+                _score[1]++;
+                reset(1);
+            } else {
+                _score[0]++;
+                reset(0);
+            }
         }
         for (int i = 0; i < 2; ++i) {
             if (index == 4*i + 11) {
@@ -361,9 +402,12 @@ double World::collisionBallBall(const QPointF &r1, const QPointF &v1, const QPoi
 
     // verification de l'accroisement
     for (int i = 0; i < 2; ++i) {
-        double deviation = ((4.0 * e * root[i] + 3.0 * a) * root[i] + 2.0 * b) * root[i] + c;
-        if (deviation >= 0.0) {
-            root[i] = -1.0;
+        if (root[i] >= 0.0) {
+            double deviation = ((4.0 * e * root[i] + 3.0 * a) * root[i] + 2.0 * b) * root[i] + c;
+            if (deviation >= 0.0) {
+                qDebug() << "deviation=" << deviation;
+                root[i] = -1.0;
+            }
         }
     }
 
@@ -373,6 +417,11 @@ double World::collisionBallBall(const QPointF &r1, const QPointF &v1, const QPoi
     for (int i = 0; i < 4; ++i) {
         if (root[i] >= 0.0 && (root[i] < r || r < 0.0))
             r = root[i];
+    }
+
+    if (r == 0.0) {
+        double deviation = ((4.0 * e * r + 3.0 * a) * r + 2.0 * b) * r + c;
+        qDebug() << "t=0 : deviation=" << deviation;
     }
 
     return r;
