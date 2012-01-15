@@ -25,4 +25,12 @@ SOURCES += main.cpp \
 HEADERS += \
     cmdlineparser.h \
     server.h \
-    world.h
+    world.h \
+    quartic/quartic_yacfraid.hpp \
+    quartic/quartic_neumark.hpp \
+    quartic/quartic_ferrari.hpp \
+    quartic/quartic_error.hpp \
+    quartic/quartic_descartes.hpp \
+    quartic/quartic.hpp \
+    quartic/quadratic.hpp \
+    quartic/cubic.hpp

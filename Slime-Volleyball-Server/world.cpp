@@ -2,6 +2,8 @@
 #include <cmath>
 #include <QRectF>
 
+#include "quartic/quartic.hpp"
+
 World::World()
 {
 }
@@ -277,4 +279,43 @@ void World::setSlimeRadius(double x)
     _slimeRadius = x;
 }
 
+double World::collisionUniformMotion(double r1x, double r1y, double v1x, double v1y, double R1, double r2x, double r2y, double v2x, double v2y, double R2)
+{
+    double drx = r2x - r1x;
+    double dry = r2y - r1y;
+    double dvx = v2x - v1x;
+    double dvy = v2y - v1y;
+    double R = R1 + R2;
 
+    double a = dvx*dvx + dvy*dvy;
+    double b = 2.0* (drx*dvx + dry*dvy);
+    double c = drx*drx + dry*dry - R*R;
+
+    // (a = 0) => (v1 = v2) => (b = 0)
+    if (a == 0.0) {
+        // (c /= 0) => les deux objets ne se touche jamais
+        // (c == 0) => les deux objets sont en contact permanent
+        return -1.0;
+    }
+
+    double delta = b*b - 4.0 * a * c;
+
+    if (delta < 0.0)
+        return -1.0;
+
+    double sqrt = std::sqrt(delta);
+
+    double t1 = (-b - sqrt) / (2.0 * a);
+
+    // todo: Si sa touche à t=0 on fait la collision oubien elle à déjà été faite ?
+    // on gère toutes les collision qui ont : t < dt
+    if (t1 >= 0.0)
+        return t1;
+
+    double t2 = (-b + sqrt) / (2.0 * a);
+
+    if (t2 >= 0.0)
+        return t2;
+
+    return -1.0;
+}

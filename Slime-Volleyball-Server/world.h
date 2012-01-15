@@ -42,6 +42,10 @@ private:
     double length(QPointF p);
     double dotProduct(QPointF p1, QPointF p2);
 
+    // Collision entre deux cercles dans le plan qui ont la même acceleration
+    double collisionUniformMotion(double r1x, double r1y, double v1x, double v1y, double R1,
+                                     double r2x, double r2y, double v2x, double v2y, double R2);
+
     QPointF _ballActualPos;
     QPointF _ballSpeedInit;
     QPointF _ballPosInit;
