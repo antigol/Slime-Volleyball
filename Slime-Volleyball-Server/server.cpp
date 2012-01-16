@@ -4,7 +4,7 @@
 #include <QDebug>
 
 Server::Server(QObject *parent) :
-    QThread(parent)
+    QObject(parent)
 {
     _world = new World();
 
@@ -51,15 +51,6 @@ void Server::stop()
     _timerId = 0;
     _server->close();
     qDebug("Server stopped");
-}
-
-void Server::run()
-{
-    _stopServer = false;
-    while (_stopServer == false) {
-        msleep(qMax(15 - _time.elapsed(), 4));
-
-    }
 }
 
 void Server::timerEvent(QTimerEvent *)

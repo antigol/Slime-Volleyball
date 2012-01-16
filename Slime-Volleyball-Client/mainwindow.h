@@ -5,6 +5,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QTcpSocket>
+#include <QTime>
+#include <QMutex>
 
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
@@ -50,12 +52,12 @@ private:
     double _ballradius;
     double _slimeradius;
 
-    double _ballX;
-    double _ballY;
-    double _player1X;
-    double _player1Y;
-    double _player2X;
-    double _player2Y;
+    QPointF _ball;
+    QPointF _player1;
+    QPointF _player2;
+    QPointF _ballSpeed;
+    QPointF _player1Speed;
+    QPointF _player2Speed;
     quint16 _score1;
     quint16 _score2;
 
@@ -67,6 +69,8 @@ private:
 
     quint16 _keys1;
     quint16 _keys2;
+    QTime _time;
+    QMutex _drawMutex;
 };
 
 #endif // MAINWINDOW_H

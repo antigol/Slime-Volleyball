@@ -1,7 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <QThread>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QList>
@@ -9,7 +8,7 @@
 #include <QTime>
 #include "world.h"
 
-class Server : public QThread
+class Server : public QObject
 {
     Q_OBJECT
 public:
@@ -27,7 +26,6 @@ private slots:
     void clientOut();
 
 private:
-    void run();
     void timerEvent(QTimerEvent *);
 
     QTime _time;
