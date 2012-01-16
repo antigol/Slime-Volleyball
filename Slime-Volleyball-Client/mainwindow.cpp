@@ -66,6 +66,7 @@ void MainWindow::dataReceived()
         in >> _slimeradius;
         _packetSize = 0;
 
+        setGeometry(QRect(pos(), QSize(_width, _height) * 1.2));
         _scene->setSceneRect(0, 0, _width, _height);
         _view->setSceneRect(0, 0, _width, _height);
         _boxItem->setRect(0, 0, _width, _height);

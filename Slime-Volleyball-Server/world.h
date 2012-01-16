@@ -19,7 +19,7 @@ public:
     void reset(int team = -1);
 
 private:
-    double length(QPointF p);
+    double sqlength(QPointF p);
     double dotProduct(QPointF p1, QPointF p2);
 
     // Collision entre deux cercles dans le plan
@@ -55,6 +55,7 @@ public:
     double _enTransFactor;
     double _ballRadius;
     double _slimeRadius;
+    double _ballMaximumSpeed;
 };
 
 #endif // WORLD_H

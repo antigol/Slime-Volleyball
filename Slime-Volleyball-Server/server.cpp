@@ -35,7 +35,7 @@ void Server::play()
 
     world()->reset();
 
-    _timerId = startTimer(23);
+    _timerId = startTimer(30);
     // que le jeu commence
     start();
 }
@@ -49,7 +49,7 @@ void Server::run()
 
     _stopServer = false;
     while (_stopServer == false) {
-        msleep(qMax(5 - time.elapsed(), 2));
+        msleep(qMax(15 - time.elapsed(), 4));
 
         _runMutex.lock();
         double dt = (double)time.restart() / 1000.0;
@@ -58,10 +58,10 @@ void Server::run()
         _runMutex.unlock();
 
         // calcule les nouvelles positions
-        QTime t; t.start();
+//        QTime t; t.start();
 
         _world->exactMove(dt, playersKeys);
-        qDebug() << t.elapsed() << "ms";
+//        qDebug() << t.elapsed() << "ms";
     }
 
     // arrêt

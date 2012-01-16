@@ -75,7 +75,7 @@ void World::move(double dt, Movements playersMov[])
     // collisions balle <-> joueurs
     for (int i = 0; i < 2; ++i) {
         QPointF u = _ballActualPos - _playersActualPos[i];
-        double dist = length(u);
+        double dist = std::sqrt(sqlength(u));
         u /= dist;
 
         if (dist <= _ballRadius + _slimeRadius) {
@@ -138,7 +138,7 @@ void World::move(double dt, Movements playersMov[])
     } else {
         // vecteur unitaire u (du sommet du filet -> centre de la balle)
         QPointF u = _ballActualPos - QPointF(_width/2.0, _netHeight);
-        double dist = length(u);
+        double dist = std::sqrt(sqlength(u));
         u /= dist;
 
         if (dist <= _ballRadius) {
@@ -177,9 +177,9 @@ void World::move(double dt, Movements playersMov[])
 
 }
 
-double World::length(QPointF p)
+double World::sqlength(QPointF p)
 {
-    return std::sqrt(p.x()*p.x() + p.y()*p.y());
+    return (p.x()*p.x() + p.y()*p.y());
 }
 
 double World::dotProduct(QPointF p1, QPointF p2)
@@ -213,15 +213,23 @@ void World::exactMove(double dt, World::Movements playersMov[])
 
     // On ne déplace pas les objets ! On change leur vitesse et acceleration
 
-    for (int i = 0; i < 2; ++i) {
-        if (playersMov[i] & Left) {
-            _playersActualSpeed[i].rx() = -_playerSpeed;
-        } else if (playersMov[i] & Right) {
-            _playersActualSpeed[i].rx() = _playerSpeed;
-        } else {
-            _playersActualSpeed[i].rx() = 0;
-        }
+    if ((playersMov[0] & Left) && _playersActualPos[0].x() != _slimeRadius) {
+        _playersActualSpeed[0].rx() = -_playerSpeed;
+    } else if ((playersMov[0] & Right) && _playersActualPos[0].x() != _width/2.0 - _slimeRadius) {
+        _playersActualSpeed[0].rx() = _playerSpeed;
+    } else {
+        _playersActualSpeed[0].rx() = 0;
+    }
 
+    if ((playersMov[1] & Left) && _playersActualPos[1].x() != _width/2.0 + _slimeRadius) {
+        _playersActualSpeed[1].rx() = -_playerSpeed;
+    } else if ((playersMov[1] & Right) && _playersActualPos[1].x() != _width - _slimeRadius) {
+        _playersActualSpeed[1].rx() = _playerSpeed;
+    } else {
+        _playersActualSpeed[1].rx() = 0;
+    }
+
+    for (int i = 0; i < 2; ++i) {
         if ((playersMov[i] & Up) && _playersActualAccel[i].y() == 0.0) {
             // se prépare à voler
             _playersActualSpeed[i].ry() = _playerSpeed;
@@ -242,9 +250,7 @@ void World::exactMove(double dt, World::Movements playersMov[])
                                 ballActualAccel, _ballRadius,
                                 _playersActualPos[i], _playersActualSpeed[i],
                                 _playersActualAccel[i], _slimeRadius);
-        if (tmp == 0.0) {
-            qDebug() << "t=0";
-        }
+
         if (tmp >= 0.0 && (index < 0 || tmp < tt)) {
             index = i;
             tt = tmp;
@@ -274,7 +280,38 @@ void World::exactMove(double dt, World::Movements playersMov[])
         index = 5;
         tt = tmp;
     }
+    // 6 : fillet à gauche
+    tmp = collisionPointVSeg(_ballActualPos, _ballActualSpeed, ballActualAccel, _width/2.0 - _ballRadius, 0, _netHeight);
+    if (_ballActualSpeed.x() > 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 6;
+        tt = tmp;
+    }
+    // 7 : fillet à droite
+    tmp = collisionPointVSeg(_ballActualPos, _ballActualSpeed, ballActualAccel, _width/2.0 + _ballRadius, 0, _netHeight);
+    if (_ballActualSpeed.x() < 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 7;
+        tt = tmp;
+    }
+    // 8 : fillet somet
+    tmp = collisionBallBall(_ballActualPos, _ballActualSpeed, ballActualAccel, _ballRadius,
+                            QPointF(_width/2.0, _netHeight), QPointF(0, 0), QPointF(0, 0), 0.0);
+    if (tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 8;
+        tt = tmp;
+    }
 
+    // 9 : mur
+    tmp = collisionPointVSeg(_playersActualPos[0], _playersActualSpeed[0], _playersActualAccel[0], _slimeRadius, 0, _height);
+    if (_playersActualSpeed[0].x() < 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 9;
+        tt = tmp;
+    }
+    // 10 : fillet
+    tmp = collisionPointVSeg(_playersActualPos[0], _playersActualSpeed[0], _playersActualAccel[0], _width/2.0 - _slimeRadius, 0, _height);
+    if (_playersActualSpeed[0].x() > 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 10;
+        tt = tmp;
+    }
 
     for (int i = 0; i < 2; ++i) {
         // 11 : joueur sol + R
@@ -283,7 +320,25 @@ void World::exactMove(double dt, World::Movements playersMov[])
             index = 4*i + 11;
             tt = tmp;
         }
+        // 12 : plafond
+        tmp = collisionPointHSeg(_playersActualPos[i], _playersActualSpeed[i], _playersActualAccel[i], _height - _slimeRadius, 0, _width);
+        if (_playersActualSpeed[i].y() > 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+            index = 4*i + 12;
+            tt = tmp;
+        }
+    }
 
+    // 13 : mur
+    tmp = collisionPointVSeg(_playersActualPos[1], _playersActualSpeed[1], _playersActualAccel[1], _width - _slimeRadius, 0, _height);
+    if (_playersActualSpeed[1].x() > 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 13;
+        tt = tmp;
+    }
+    // 14 : fillet
+    tmp = collisionPointVSeg(_playersActualPos[1], _playersActualSpeed[1], _playersActualAccel[1], _width/2.0 + _slimeRadius, 0, _height);
+    if (_playersActualSpeed[1].x() < 0.0 && tmp >= 0.0 && (index < 0 || tmp < tt)) {
+        index = 14;
+        tt = tmp;
     }
 
     // On déplace les objets
@@ -298,6 +353,9 @@ void World::exactMove(double dt, World::Movements playersMov[])
         }
 
     } else {
+        if (tt == 0) {
+            qDebug() << "tt = " << tt << " index = " << index;
+        }
 
         // On déplace tout de tt
         _ballActualPos += (_ballActualSpeed + 0.5 * ballActualAccel * tt) * tt;
@@ -314,19 +372,24 @@ void World::exactMove(double dt, World::Movements playersMov[])
 
             // vecteur u, du joueur vers la balle
             QPointF u = _ballActualPos - _playersActualPos[index];
-            double dist = length(u);
+            double dist = std::sqrt(sqlength(u));
             u /= dist;
 
             // referentiel : playeri
             // fixme:playerspeed
-            QPointF s = _ballActualSpeed - _playersActualSpeed[index] /** _enTransFactor*/;
+            QPointF s = _ballActualSpeed - _playersActualSpeed[index];
             double factor = dotProduct(s, u);
             // Le facteur doit être negatif, s'il est positif c'est un bug
             if (factor < 0) {
                 // debond sans perte d'energie
                 s -= 2.0 * factor * u;
                 // referentiel : world
-                _ballActualSpeed = s + _playersActualSpeed[index] /** _enTransFactor*/;
+                _ballActualSpeed = s + _playersActualSpeed[index];
+                double speed = std::sqrt(sqlength(_ballActualSpeed));
+                if (speed > _ballMaximumSpeed) {
+                    _ballActualSpeed /= speed;
+                    _ballActualSpeed *= _ballMaximumSpeed;
+                }
             } else {
 
             }
@@ -349,11 +412,38 @@ void World::exactMove(double dt, World::Movements playersMov[])
                 reset(0);
             }
         }
+        if (index == 6 || index == 7) {
+            // fillet gauche, droite
+            _ballActualSpeed.rx() *= -1.0;
+        }
+        if (index == 8) {
+            QPointF u = _ballActualPos - QPointF(_width/2.0, _netHeight);
+            double dist = std::sqrt(sqlength(u));
+            u /= dist;
+
+            QPointF s = _ballActualSpeed;
+            double factor = dotProduct(s, u);
+            // Le facteur doit être negatif, s'il est positif c'est un bug
+            if (factor < 0) {
+                // debond sans perte d'energie
+                s -= 2.0 * factor * u;
+                _ballActualSpeed = s;
+            }
+        }
         for (int i = 0; i < 2; ++i) {
+            if (index == 4*i + 9 || index == 4*i + 10) {
+                // mur, fillet
+                _playersActualSpeed[i].rx() = 0.0;
+                _playersActualAccel[i].rx() = 0.0;
+            }
             if (index == 4*i + 11) {
                 // sol
                 _playersActualSpeed[i].ry() = 0.0;
                 _playersActualAccel[i].ry() = 0.0;
+            }
+            if (index == 4*i + 12) {
+                // plafond
+                _playersActualSpeed[i].ry() *= -1.0;
             }
         }
 
@@ -405,7 +495,7 @@ double World::collisionBallBall(const QPointF &r1, const QPointF &v1, const QPoi
         if (root[i] >= 0.0) {
             double deviation = ((4.0 * e * root[i] + 3.0 * a) * root[i] + 2.0 * b) * root[i] + c;
             if (deviation >= 0.0) {
-                qDebug() << "deviation=" << deviation;
+//                qDebug() << "deviation=" << deviation;
                 root[i] = -1.0;
             }
         }

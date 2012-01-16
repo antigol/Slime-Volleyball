@@ -29,14 +29,15 @@ int main(int argc, char *argv[])
 
     // todo: donner les arguments
     server.setPort(parser.get("port", 2222).toInt());
-    server.world()->_gValue = (parser.get("gval", 150.0).toDouble());
-    server.world()->_height = (parser.get("height", 400).toInt());
-    server.world()->_width = (parser.get("width", 600).toInt());
-    server.world()->_netHeight = (parser.get("netheight", 50).toInt());
-    server.world()->_playerSpeed = (parser.get("playerSpeed", 150.0).toDouble());
-    server.world()->_enTransFactor = (parser.get("entrans", 0.15).toDouble());
-    server.world()->_ballRadius = (parser.get("rball", 5.0).toDouble());
-    server.world()->_slimeRadius = (parser.get("rslime", 30.0).toDouble());
+    server.world()->_gValue = parser.get("gval", 150.0).toDouble();
+    server.world()->_height = parser.get("height", 400).toInt();
+    server.world()->_width = parser.get("width", 600).toInt();
+    server.world()->_netHeight = parser.get("netheight", 50).toInt();
+    server.world()->_playerSpeed = parser.get("playerSpeed", 150.0).toDouble();
+    server.world()->_enTransFactor = parser.get("entrans", 0.15).toDouble();
+    server.world()->_ballRadius = parser.get("rball", 5.0).toDouble();
+    server.world()->_slimeRadius = parser.get("rslime", 30.0).toDouble();
+    server.world()->_ballMaximumSpeed = parser.get("ballMax", 400.0).toDouble();
 
     // todo: lancer le serveur
     server.play();
