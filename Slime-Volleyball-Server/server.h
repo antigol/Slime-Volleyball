@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QList>
 #include <QMutex>
+#include <QTime>
 #include "world.h"
 
 class Server : public QThread
@@ -15,9 +16,10 @@ public:
     explicit Server(QObject *parent = 0);
     ~Server();
 
-    void play();
     void setPort(quint16 port);
     World *world();
+    bool play();
+    void stop();
 
 private slots:
     void newClient();
@@ -28,6 +30,7 @@ private:
     void run();
     void timerEvent(QTimerEvent *);
 
+    QTime _time;
     World *_world;
     QMutex _runMutex;
     QTcpServer *_server;

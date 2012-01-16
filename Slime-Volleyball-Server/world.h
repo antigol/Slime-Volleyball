@@ -14,7 +14,7 @@ public:
     };
 
     World();
-    void move(double dt, enum Movements playersKeys[]);
+//    void move(double dt, enum Movements playersKeys[]);
     void exactMove(double dt, enum Movements playersKeys[]);
     void reset(int team = -1);
 
@@ -31,11 +31,10 @@ private:
     double collisionPointHSeg(const QPointF &r1, const QPointF &v1, const QPointF& a1,
                               double sy, double s1x, double s2x);
 
-    QPointF _ballSpeedInit;
-    QPointF _ballPosInit;
-    double _ballTVol;
-
-    double _tvol[2];
+//    QPointF _ballSpeedInit;
+//    QPointF _ballPosInit;
+//    double _ballTVol;
+//    double _tvol[2];
 
 public:
     QPointF _ballActualPos;

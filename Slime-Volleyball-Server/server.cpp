@@ -1,5 +1,4 @@
 #include "server.h"
-#include <QTime>
 #include <QCoreApplication>
 #include <QDataStream>
 #include <QDebug>
@@ -11,67 +10,65 @@ Server::Server(QObject *parent) :
 
     _server = new QTcpServer(this);
 
+    _timerId = 0;
     _playersKeys[0] = _playersKeys[1] = World::DontMove;
 }
 
 Server::~Server()
 {
-    _stopServer = true;
-    wait(1);
+    stop();
     delete _world;
 }
 
-void Server::play()
+bool Server::play()
 {
+    if (_timerId != 0)
+        stop();
+
     // initialisation
     if (_server->listen(QHostAddress::Any, _portNumber)) {
         qDebug() << "server start to listen on port : " << _portNumber;
         connect(_server, SIGNAL(newConnection()), this, SLOT(newClient()));
     } else {
         qDebug() << "server can't start on port : " << _portNumber;
-        QCoreApplication::exit(-1);
-        return;
+        return false;
     }
 
     world()->reset();
 
-    _timerId = startTimer(30);
-    // que le jeu commence
-    start();
+    _time.start();
+    _timerId = startTimer(50);
+
+    return (_timerId != 0);
 }
 
-void Server::run()
+void Server::stop()
 {
-    QTime time;
-    time.start();
-
-    World::Movements playersKeys[2];
-
-    _stopServer = false;
-    while (_stopServer == false) {
-        msleep(qMax(15 - time.elapsed(), 4));
-
-        _runMutex.lock();
-        double dt = (double)time.restart() / 1000.0;
-        for (int i = 0; i < 2; ++i)
-            playersKeys[i] = _playersKeys[i];
-        _runMutex.unlock();
-
-        // calcule les nouvelles positions
-//        QTime t; t.start();
-
-        _world->exactMove(dt, playersKeys);
-//        qDebug() << t.elapsed() << "ms";
-    }
-
     // arrêt
+    _stopServer = true;
+    //    wait();
     killTimer(_timerId);
+    _timerId = 0;
     _server->close();
     qDebug("Server stopped");
 }
 
+void Server::run()
+{
+    _stopServer = false;
+    while (_stopServer == false) {
+        msleep(qMax(15 - _time.elapsed(), 4));
+
+    }
+}
+
 void Server::timerEvent(QTimerEvent *)
 {
+    _runMutex.lock();
+    double dt = (double)_time.restart() / 1000.0;
+    _world->exactMove(dt, _playersKeys);
+    _runMutex.unlock();
+
     // Création du paquet PKT_PLAY
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
@@ -94,8 +91,8 @@ void Server::timerEvent(QTimerEvent *)
     out.device()->seek(0);
     out << (quint16)(packet.size() - sizeof (quint16));
 
-//    qDebug() << "bx" << _world->_ballActualPos.x();
-//    qDebug() << "by" << _world->_ballActualPos.y();
+    //    qDebug() << "bx" << _world->_ballActualPos.x();
+    //    qDebug() << "by" << _world->_ballActualPos.y();
     //        qDebug() << "p1" << _world->playerActualPosition(0).x();
     //        qDebug() << "p1" << _world->playerActualPosition(0).y();
     //        qDebug() << "p2" << _world->playerActualPosition(1).x();
@@ -156,10 +153,15 @@ void Server::dataReceived()
 
     qDebug() << "k1 :" << keys1 << " k2 :" << keys2;
 
-    _runMutex.lock();
-    _playersKeys[0] = (World::Movements)keys1;
-    _playersKeys[1] = (World::Movements)keys2;
-    _runMutex.unlock();
+    if (_runMutex.tryLock()) {
+        _playersKeys[0] = (World::Movements)keys1;
+        _playersKeys[1] = (World::Movements)keys2;
+        double dt = (double)_time.restart() / 1000.0;
+        _world->exactMove(dt, _playersKeys);
+        _runMutex.unlock();
+    } else {
+        qDebug("tu envoie trop de paquet ?");
+    }
 }
 
 void Server::clientOut()

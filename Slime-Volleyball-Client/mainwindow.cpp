@@ -89,6 +89,7 @@ void MainWindow::dataReceived()
         in >> _score2;
         _packetSize = 0;
 
+        qDebug() << _score1 << " à " << _score2 << ".";
         //        qDebug() << _ballX;
         //        qDebug() << _ballY;
         //        qDebug() << _player1X;
