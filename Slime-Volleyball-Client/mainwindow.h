@@ -45,6 +45,7 @@ private:
     QGraphicsScene *_scene;
     QTcpSocket *_socket;
 
+    quint8 _packetId;
     quint16 _packetSize;
 
     double _width;

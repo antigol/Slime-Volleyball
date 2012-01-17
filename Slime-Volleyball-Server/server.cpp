@@ -60,11 +60,11 @@ void Server::timerEvent(QTimerEvent *)
     _world->exactMove(dt, _playersKeys);
     _runMutex.unlock();
 
-    // Création du paquet PKT_PLAY
+    // Création du paquet {positions et vitesse}
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    out << (quint16)0;
+    out << (quint8)2;
     out << _world->_ballActualPos.x();
     out << _world->_ballActualPos.y();
     out << _world->_playersActualPos[0].x();
@@ -79,8 +79,6 @@ void Server::timerEvent(QTimerEvent *)
     out << _world->_playersActualSpeed[1].y();
     out << (quint16)_world->_score[0];
     out << (quint16)_world->_score[1];
-    out.device()->seek(0);
-    out << (quint16)(packet.size() - sizeof (quint16));
 
     //    qDebug() << "bx" << _world->_ballActualPos.x();
     //    qDebug() << "by" << _world->_ballActualPos.y();
@@ -101,20 +99,17 @@ void Server::newClient()
     QTcpSocket *newClient = _server->nextPendingConnection();
     qDebug() << "Nouveau client : " << newClient->peerAddress().toString();
 
-    // Création du paquet PKT_INIT
+    // Création du paquet {initialisation}
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
-    out << (quint16)0;
+    out << (quint8)1;
+    out.setFloatingPointPrecision(QDataStream::DoublePrecision);
     out << _world->_width;
     out << _world->_height;
     out << _world->_netHeight;
     out << _world->_ballRadius;
     out << _world->_slimeRadius;
     out << _world->_playerSpeed;
-    out.device()->seek(0);
-    quint16 packetSize = packet.size() - sizeof (quint16);
-    out << packetSize;
-    qDebug() << "packetSize = " << packetSize;
 
     newClient->write(packet);
 
@@ -146,8 +141,10 @@ void Server::dataReceived()
     qDebug() << "k1 :" << keys1 << " k2 :" << keys2;
 
     if (_runMutex.tryLock()) {
-        _playersKeys[0] = (World::Movements)keys1;
-        _playersKeys[1] = (World::Movements)keys2;
+        if (!(keys1 & 0x8))
+            _playersKeys[0] = (World::Movements)keys1;
+        if (!(keys2 & 0x8))
+            _playersKeys[1] = (World::Movements)keys2;
         double dt = (double)_time.restart() / 1000.0;
         _world->exactMove(dt, _playersKeys);
         _runMutex.unlock();

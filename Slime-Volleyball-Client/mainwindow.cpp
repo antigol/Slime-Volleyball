@@ -50,16 +50,28 @@ void MainWindow::dataReceived()
     QDataStream in(_socket);
 
     if (_packetSize == 0) {
-        if (_socket->bytesAvailable() < (qint64)(sizeof (quint16)))
+        if (_socket->bytesAvailable() < (qint64)(sizeof (quint8)))
             return;
 
-        in >> _packetSize;
+        in >> _packetId;
+
+        switch (_packetId) {
+        case 1:
+            _packetSize = 48;
+            break;
+        case 2:
+            _packetSize = 52;
+            break;
+        default:
+            _packetSize = 0;
+            break;
+        }
     }
 
     if (_socket->bytesAvailable() < _packetSize)
         return;
 
-    if (_packetSize == 48) {
+    if (_packetId == 1) {
         in >> _width;
         in >> _height;
         in >> _netHeight;
@@ -78,7 +90,7 @@ void MainWindow::dataReceived()
         _slime2Item->setRect(-_slimeradius, -_slimeradius, 2.0*_slimeradius, 2.0*_slimeradius);
     }
 
-    if (_packetSize == 52) {
+    if (_packetId == 2) {
         in.setFloatingPointPrecision(QDataStream::SinglePrecision);
         in >> _ball.rx();
         in >> _ball.ry();

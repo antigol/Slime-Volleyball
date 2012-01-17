@@ -8,13 +8,13 @@ connexion tcp
 {actions}
 [int16] keysP1
 [int16] keysP2
-Valeurs pour les touches : gauche 0x1, droite = 0x2, saut = 0x4, immobile = 0x3
+Valeurs pour les touches : gauche 0x1, droite = 0x2, saut = 0x4, nejouepas = 0x8
 
 
 2) paquet serveur -> client
 
 {initialisation} à la connexion
-[int8] 2
+[uint8] 1
 [double64] largeur du jeu
 [double64] hauteur du jeu
 [double64] hauteur du filet
@@ -22,7 +22,7 @@ Valeurs pour les touches : gauche 0x1, droite = 0x2, saut = 0x4, immobile = 0x3
 
 
 {positions et vitesse} tout les ~50ms
-[int8] 1
+[uint8] 2
 [float32] positions balle x
 [float32]                 y
 [float32]           joueur 1
