@@ -31,6 +31,7 @@ public:
 private slots:
     void connectSlot();
     void connectedSlot();
+    void errorSlot(QAbstractSocket::SocketError error);
     void dataReceived();
     void timerSlot();
 

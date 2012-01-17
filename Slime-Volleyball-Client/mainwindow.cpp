@@ -22,8 +22,10 @@ MainWindow::MainWindow(QWidget *parent)
     _keys1 = _keys2 = 0;
 
     connect(_socket, SIGNAL(connected()), this, SLOT(connectedSlot()));
+    connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorSlot(QAbstractSocket::SocketError)));
     connect(_socket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-    menuBar()->addAction("Connect...", this, SLOT(connectSlot()));
+    QMenu *menu = menuBar()->addMenu("Start");
+    menu->addAction("Connect...", this, SLOT(connectSlot()));
 
     connect(&_timer, SIGNAL(timeout()), SLOT(timerSlot()));
 
@@ -37,12 +39,18 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectSlot()
 {
-    _socket->connectToHost("localhost", 2222, QIODevice::ReadWrite);
+    QString srv = QInputDialog::getText(this, "server", "server");
+    _socket->connectToHost(srv, 2222, QIODevice::ReadWrite);
 }
 
 void MainWindow::connectedSlot()
 {
     qDebug("Connected");
+}
+
+void MainWindow::errorSlot(QAbstractSocket::SocketError error)
+{
+    qDebug("error");
 }
 
 void MainWindow::dataReceived()
