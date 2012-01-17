@@ -7,6 +7,7 @@
 #include <QTcpSocket>
 #include <QTime>
 #include <QMutex>
+#include <QTimer>
 
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
@@ -31,12 +32,12 @@ private slots:
     void connectSlot();
     void connectedSlot();
     void dataReceived();
+    void timerSlot();
 
 private:
     void initdraw();
     void redraw();
 
-    void timerEvent(QTimerEvent *);
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *);
 
@@ -51,6 +52,7 @@ private:
     double _netHeight;
     double _ballradius;
     double _slimeradius;
+    double _playerSpeed;
 
     QPointF _ball;
     QPointF _player1;
@@ -71,6 +73,7 @@ private:
     quint16 _keys2;
     QTime _time;
     QMutex _drawMutex;
+    QTimer _timer;
 };
 
 #endif // MAINWINDOW_H

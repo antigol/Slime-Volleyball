@@ -110,6 +110,7 @@ void Server::newClient()
     out << _world->_netHeight;
     out << _world->_ballRadius;
     out << _world->_slimeRadius;
+    out << _world->_playerSpeed;
     out.device()->seek(0);
     quint16 packetSize = packet.size() - sizeof (quint16);
     out << packetSize;

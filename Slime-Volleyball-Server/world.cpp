@@ -216,10 +216,13 @@ void World::exactMove(double dt, World::Movements playersMov[])
 
     if ((playersMov[0] & Left) && _playersActualPos[0].x() != _slimeRadius) {
         _playersActualSpeed[0].rx() = -_playerSpeed;
+//        _playersActualAccel[0].rx() = -_gValue;
     } else if ((playersMov[0] & Right) && _playersActualPos[0].x() != _width/2.0 - _slimeRadius) {
         _playersActualSpeed[0].rx() = _playerSpeed;
+//        _playersActualAccel[0].rx() = _gValue;
     } else {
         _playersActualSpeed[0].rx() = 0;
+//        _playersActualAccel[0].rx() = 0;
     }
 
     if ((playersMov[1] & Left) && _playersActualPos[1].x() != _width/2.0 + _slimeRadius) {

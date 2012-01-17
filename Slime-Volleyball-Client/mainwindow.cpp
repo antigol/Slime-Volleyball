@@ -25,7 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(_socket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
     menuBar()->addAction("Connect...", this, SLOT(connectSlot()));
 
-    startTimer(20);
+    connect(&_timer, SIGNAL(timeout()), SLOT(timerSlot()));
+
+    _timer.start(20);
 }
 
 MainWindow::~MainWindow()
@@ -53,17 +55,17 @@ void MainWindow::dataReceived()
 
         in >> _packetSize;
     }
-    qDebug("Data received %d", _packetSize);
 
     if (_socket->bytesAvailable() < _packetSize)
         return;
 
-    if (_packetSize == 40) {
+    if (_packetSize == 48) {
         in >> _width;
         in >> _height;
         in >> _netHeight;
         in >> _ballradius;
         in >> _slimeradius;
+        in >> _playerSpeed;
         _packetSize = 0;
 
         setGeometry(QRect(pos(), QSize(_width, _height) * 1.2));
@@ -94,18 +96,10 @@ void MainWindow::dataReceived()
         in >> _score2;
         _packetSize = 0;
 
-        qDebug() << _score1 << " a " << _score2 << ".";
-        //        qDebug() << _ballX;
-        //        qDebug() << _ballY;
-        //        qDebug() << _player1X;
-        //        qDebug() << _player1Y;
-        //        qDebug() << _player2X;
-        //        qDebug() << _player2Y;
-        //        qDebug() << _score1;
-        //        qDebug() << _score2;
-
         _drawMutex.lock();
+        _timer.start();
         _time.restart();
+        redraw();
         _drawMutex.unlock();
     }
 
@@ -133,7 +127,7 @@ void MainWindow::redraw()
     _scene->update();
 }
 
-void MainWindow::timerEvent(QTimerEvent *)
+void MainWindow::timerSlot()
 {
     double dt;
     if (_drawMutex.tryLock()) {
@@ -156,19 +150,29 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
     switch (event->key()) {
     case Qt::Key_Left:
+        qDebug() << "Left Press";
         k2 |= Left;
+        k2 &= ~Right;
+//        _player2Speed.rx() = -_playerSpeed;
         break;
     case Qt::Key_Right:
+        qDebug() << "Right Press";
         k2 |= Right;
+        k2 &= ~Left;
+//        _player2Speed.rx() = +_playerSpeed;
         break;
     case Qt::Key_Up:
         k2 |= Up;
         break;
     case Qt::Key_A:
         k1 |= Left;
+        k1 &= ~Right;
+//        _player1Speed.rx() = -_playerSpeed;
         break;
     case Qt::Key_D:
         k1 |= Right;
+        k1 &= ~Left;
+//        _player1Speed.rx() = +_playerSpeed;
         break;
     case Qt::Key_W:
         k1 |= Up;
@@ -198,19 +202,25 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
 
     switch (event->key()) {
     case Qt::Key_Left:
+        qDebug() << "Right Release";
         k2 &= ~Left;
+//        _player2Speed.rx() = 0;
         break;
     case Qt::Key_Right:
+        qDebug() << "Right Release";
         k2 &= ~Right;
+//        _player2Speed.rx() = 0;
         break;
     case Qt::Key_Up:
         k2 &= ~Up;
         break;
     case Qt::Key_A:
         k1 &= ~Left;
+//        _player1Speed.rx() = 0;
         break;
     case Qt::Key_D:
         k1 &= ~Right;
+//        _player1Speed.rx() = 0;
         break;
     case Qt::Key_W:
         k1 &= ~Up;
