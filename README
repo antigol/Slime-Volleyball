@@ -1,51 +1,44 @@
-TODO : ALL
-
-==== Le Serveur ====
+============================
+======== Le Serveur ========
+============================
 connexion tcp
 
-1) paquets client -> serveur
-taille du paquet : 32bit (4octets)
-format : (int16 keysP1):(int16 keysP2)
-(on pourra rajouter un int8 pour des option comme par exemple pause ou reset)
-playerNumber : joueur 1 = 0, joueur 2 = 1,...
-masques pour keys :
-        Left = 0x1,
-        Right = 0x2,
-        Up = 0x4
-Si le joueur 2 veux aller à droite et sauter : 0x0001 0006
+1) paquet client -> serveur
 
-2) paquets serveur -> client
-Deux sortes de paquets. Un pour initialiser les paramètres globaux
-L'autre pour informer sur les positions des objets le long du jeu.
+{actions}
+[int16] keysP1
+[int16] keysP2
+Valeurs pour les touches : gauche 0x1, droite = 0x2, saut = 0x4, immobile = 0x3
 
-format : Paquet PLAY
-Type        Valeur
-int16       52 (taille de ce qui suit en octet)
-float32     position de la balle en x
-float32                             y
-float32     position du joueur 1 en x
-float32                             y
-float32                        2 en x
-float32                             y
-float32     vitesse de la balle x
-float32                         y
-float32     vitesse joueur 1 x
-float32                    1 y
-float32                    2 x
-float32                    2 y
-int16       score joueur 1
-int16                    2
 
-format : Paquet INIT
-Type        Valeur
-int16       24
-double64     largeur du jeu
-double64     hauteur du jeu
-double64     hauteur du filet
-double64     player speed
+2) paquet serveur -> client
 
-Le serveur joue le jeu en boucle, avec ou sans clients (il pourrait faire une 
-pause si y a aucun client)
+{initialisation} à la connexion
+[int8] 2
+[double64] largeur du jeu
+[double64] hauteur du jeu
+[double64] hauteur du filet
+[double64] player speed px/s
+
+
+{positions et vitesse} tout les ~50ms
+[int8] 1
+[float32] positions balle x
+[float32]                 y
+[float32]           joueur 1
+[float32]                             
+[float32]           joueur 2
+[float32]
+[float32] vitesses balle
+[float32]    
+[float32]          joueur 1
+[float32]                 
+[float32]                 
+[float32]          joueur 2
+[int16] score joueur 1
+[int16] score joueur 2
+
+Le serveur joue le jeu en boucle, avec ou sans clients.
 
 Le serveur accepte tout les clients qui veulent s'y connecter, si un client
 désside d'incarner les deux joueur en même temps il lui suffit d'envoyer les
@@ -55,17 +48,16 @@ Le serveur envoie en continue à tout les clients le minimum d'informations
 nessesaires pour dessiner le jeu, par consequent c'est à lui de faire la totalité
 des calculs de cinématique.
 
-==== Le Client ====
+===========================
+======== Le Client ========
+===========================
 Il doit offrir un interface simple pour jouer à 1 ou 2 joueur.
 Si l'on souhaite jouer à 1 joueur, il faut pouvoir choisir quel joueur jouer (1 ou 2).
 
-Le client affiche le jeu en cours sur le serveur, un client doit pouvoir servir d'observateur (recoit les paquet mais n'en envoie pas).
+Le client affiche le jeu en cours sur le serveur, un client doit pouvoir servir d'observateur 
+(recoit les paquet mais n'en envoie pas).
 
-Les dimentions du jeu sont paramétré sur le serveur (600x400 par exemple), 
-parcontre les dimentions des deux demi-cercles (joueurs) et de la balle sont 
-définit ici :
-    rayon d'un demi-cercle = 60px
-    rayon de la balle = 15px
+
 
 
 Idée : http://oneslime.net/
