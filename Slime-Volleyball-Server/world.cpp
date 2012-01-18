@@ -391,8 +391,10 @@ void World::exactMove(double dt, World::Movements playersMov[])
                 _ballActualSpeed = s + _playersActualSpeed[index];
                 double speed = std::sqrt(sqlength(_ballActualSpeed));
                 if (speed > _ballMaximumSpeed) {
-                    _ballActualSpeed /= speed;
-                    _ballActualSpeed *= _ballMaximumSpeed;
+                    _ballActualSpeed *= _ballMaximumSpeed/speed;
+                }
+                if (speed < _ballMinimumSpeed) {
+                    _ballActualSpeed *= _ballMinimumSpeed/speed;
                 }
             } else {
 

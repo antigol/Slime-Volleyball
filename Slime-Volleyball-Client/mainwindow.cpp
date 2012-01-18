@@ -4,6 +4,8 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QLabel>
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,9 +13,8 @@ MainWindow::MainWindow(QWidget *parent)
     _scene = new QGraphicsScene(this);
     _view = new QGraphicsView(_scene, this);
     _view->scale(1, -1);
-    setCentralWidget(_view);
 
-    grabKeyboard();
+    setCentralWidget(_view);
 
     initdraw();
 
@@ -24,8 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(_socket, SIGNAL(connected()), this, SLOT(connectedSlot()));
     connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorSlot(QAbstractSocket::SocketError)));
     connect(_socket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-    QMenu *menu = menuBar()->addMenu("Start");
-    menu->addAction("Connect...", this, SLOT(connectSlot()));
+    QMenu *menu = menuBar()->addMenu("&Start");
+    menu->addAction("&Connect...", this, SLOT(connectSlot()));
+
+    QMenu *menuPlayers = menuBar()->addMenu("Players");
+    menuPlayers->addAction("Select player...", this, SLOT(selectPlayer()));
 
     connect(&_timer, SIGNAL(timeout()), SLOT(timerSlot()));
 
@@ -39,8 +43,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectSlot()
 {
-    QString srv = QInputDialog::getText(this, "server", "server");
-    _socket->connectToHost(srv, 2222, QIODevice::ReadWrite);
+    _socket->abort();
+    QString srv = QInputDialog::getText(this, "server", "server", QLineEdit::Normal, "localhost");
+    if (!srv.isEmpty()) {
+        _socket->connectToHost(srv, 2222, QIODevice::ReadWrite);
+    }
 }
 
 void MainWindow::connectedSlot()
@@ -48,9 +55,9 @@ void MainWindow::connectedSlot()
     qDebug("Connected");
 }
 
-void MainWindow::errorSlot(QAbstractSocket::SocketError error)
+void MainWindow::errorSlot(QAbstractSocket::SocketError )
 {
-    qDebug("error");
+    qDebug() << _socket->errorString();
 }
 
 void MainWindow::dataReceived()
@@ -72,6 +79,7 @@ void MainWindow::dataReceived()
             break;
         default:
             _packetSize = 0;
+            _socket->readAll();
             break;
         }
     }
@@ -169,30 +177,30 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     quint16 k2 = _keys2;
 
     switch (event->key()) {
-    case Qt::Key_Left:
+    case Qt::Key_J:
         qDebug() << "Left Press";
         k2 |= Left;
         k2 &= ~Right;
-//        _player2Speed.rx() = -_playerSpeed;
+        //        _player2Speed.rx() = -_playerSpeed;
         break;
-    case Qt::Key_Right:
+    case Qt::Key_L:
         qDebug() << "Right Press";
         k2 |= Right;
         k2 &= ~Left;
-//        _player2Speed.rx() = +_playerSpeed;
+        //        _player2Speed.rx() = +_playerSpeed;
         break;
-    case Qt::Key_Up:
+    case Qt::Key_I:
         k2 |= Up;
         break;
     case Qt::Key_A:
         k1 |= Left;
         k1 &= ~Right;
-//        _player1Speed.rx() = -_playerSpeed;
+        //        _player1Speed.rx() = -_playerSpeed;
         break;
     case Qt::Key_D:
         k1 |= Right;
         k1 &= ~Left;
-//        _player1Speed.rx() = +_playerSpeed;
+        //        _player1Speed.rx() = +_playerSpeed;
         break;
     case Qt::Key_W:
         k1 |= Up;
@@ -206,8 +214,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         _keys2 = k2;
         QByteArray packet;
         QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)_keys1;
-        out << (quint16)_keys2;
+        out << (quint16)(_player==2?0x8:_keys1);
+        out << (quint16)(_player==1?0x8:_keys2);
         _socket->write(packet);
     }
 }
@@ -221,26 +229,26 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
     quint16 k2 = _keys2;
 
     switch (event->key()) {
-    case Qt::Key_Left:
+    case Qt::Key_J:
         qDebug() << "Right Release";
         k2 &= ~Left;
-//        _player2Speed.rx() = 0;
+        //        _player2Speed.rx() = 0;
         break;
-    case Qt::Key_Right:
+    case Qt::Key_L:
         qDebug() << "Right Release";
         k2 &= ~Right;
-//        _player2Speed.rx() = 0;
+        //        _player2Speed.rx() = 0;
         break;
-    case Qt::Key_Up:
+    case Qt::Key_I:
         k2 &= ~Up;
         break;
     case Qt::Key_A:
         k1 &= ~Left;
-//        _player1Speed.rx() = 0;
+        //        _player1Speed.rx() = 0;
         break;
     case Qt::Key_D:
         k1 &= ~Right;
-//        _player1Speed.rx() = 0;
+        //        _player1Speed.rx() = 0;
         break;
     case Qt::Key_W:
         k1 &= ~Up;
@@ -254,10 +262,15 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
         _keys2 = k2;
         QByteArray packet;
         QDataStream out(&packet, QIODevice::WriteOnly);
-        out << (quint16)_keys1;
-        out << (quint16)_keys2;
+        out << (quint16)(_player==2?0x8:_keys1);
+        out << (quint16)(_player==1?0x8:_keys2);
         _socket->write(packet);
     }
+}
+
+void MainWindow::selectPlayer()
+{
+    _player = QInputDialog::getInt(this, "player", "1=player1, 2=player2, 0=both");
 }
 
 

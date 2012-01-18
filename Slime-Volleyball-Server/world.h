@@ -55,6 +55,7 @@ public:
     double _ballRadius;
     double _slimeRadius;
     double _ballMaximumSpeed;
+    double _ballMinimumSpeed;
 };
 
 #endif // WORLD_H

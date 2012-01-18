@@ -34,6 +34,7 @@ private slots:
     void errorSlot(QAbstractSocket::SocketError error);
     void dataReceived();
     void timerSlot();
+    void selectPlayer();
 
 private:
     void initdraw();
@@ -73,6 +74,7 @@ private:
 
     quint16 _keys1;
     quint16 _keys2;
+    int _player;
     QTime _time;
     QMutex _drawMutex;
     QTimer _timer;

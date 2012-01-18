@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
     server.world()->_ballRadius = parser.get("rball", 7.0).toDouble();
     server.world()->_slimeRadius = parser.get("rslime", 30.0).toDouble();
     server.world()->_ballMaximumSpeed = parser.get("ballMax", 400.0).toDouble();
+    server.world()->_ballMinimumSpeed = parser.get("ballMin", 100.0).toDouble();
 
     // todo: lancer le serveur
     if (!server.play())
