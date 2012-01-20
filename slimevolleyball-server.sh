@@ -1,22 +1,22 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          slimevolleyball-server
-# Required-Start:    $remote_fs
-# Required-Stop:     $remote_fs
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Slime Volleyball Server 
-# Description:       Server of the game Slime Volleyball  
+# Short-Description: Slime Volleyball server
+# Description:       The server of
+#                    the game slime.
 ### END INIT INFO
 
-# Author Mario Geiger <geiger.mario@gmail.com>
-#
+# Author: Mario Geiger <geiger.mario@gmail.com>
 
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Slime Volleyball Server"
+DESC="Server for the game SlimeVolleyball"
 NAME=slimevolleyball-server
 DAEMON=/usr/local/bin/$NAME
 DAEMON_ARGS=""
@@ -33,7 +33,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 . /lib/init/vars.sh
 
 # Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
 . /lib/lsb/init-functions
 
 #
@@ -45,9 +46,9 @@ do_start()
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+	start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+	start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- \
 		$DAEMON_ARGS \
 		|| return 2
 	# Add code here, if necessary, that waits for the process to be ready
@@ -65,24 +66,20 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	#start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
-	#RETVAL="$?"
-	#[ "$RETVAL" = 2 ] && return 2
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
+	RETVAL="$?"
+	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks
 	# and if the daemon is only ever run from this initscript.
 	# If the above conditions are not satisfied then add some other code
 	# that waits for the process to drop all resources that could be
 	# needed by services started subsequently.  A last resort is to
 	# sleep for some time.
-	#start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
-	#[ "$?" = 2 ] && return 2
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+	[ "$?" = 2 ] && return 2
 	# Many daemons don't delete their pidfiles when they exit.
-	#rm -f $PIDFILE
-	#return "$RETVAL"
-
-	pkill noip2
-	[ "$?" = 0 ] && return 0
-	return 1
+	rm -f $PIDFILE
+	return "$RETVAL"
 }
 
 #
@@ -115,6 +112,9 @@ case "$1" in
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
+  status)
+       status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+       ;;
   #reload|force-reload)
 	#
 	# If do_reload() is not implemented then leave this commented out
@@ -148,7 +148,7 @@ case "$1" in
 	;;
   *)
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
 	exit 3
 	;;
 esac
