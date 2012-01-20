@@ -46,7 +46,7 @@ void MainWindow::connectSlot()
     _socket->abort();
     QString srv = QInputDialog::getText(this, "server", "server", QLineEdit::Normal, "localhost");
     if (!srv.isEmpty()) {
-        _socket->connectToHost(srv, 2222, QIODevice::ReadWrite);
+        _socket->connectToHost(srv, 2424, QIODevice::ReadWrite);
     }
 }
 

@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     Server server;
 
     // todo: donner les arguments
-    server.setPort(parser.get("port", 2222).toInt());
+    server.setPort(parser.get("port", 2424).toInt());
     server.world()->_gValue = parser.get("gval", 150.0).toDouble();
     server.world()->_height = parser.get("height", 400).toInt();
     server.world()->_width = parser.get("width", 600).toInt();
