@@ -26,6 +26,7 @@ bool Server::play()
         stop();
 
     // initialisation
+    _inBreak = true;
     if (_server->listen(QHostAddress::Any, _portNumber)) {
         qDebug() << "server start to listen on port : " << _portNumber;
         connect(_server, SIGNAL(newConnection()), this, SLOT(newClient()));
@@ -46,15 +47,18 @@ void Server::stop()
 {
     // arrêt
     _stopServer = true;
-    //    wait();
     killTimer(_timerId);
     _timerId = 0;
     _server->close();
+    _clients.clear();
     qDebug("Server stopped");
 }
 
 void Server::timerEvent(QTimerEvent *)
 {
+    if (_inBreak)
+        return;
+
     _runMutex.lock();
     double dt = (double)_time.restart() / 1000.0;
     _world->exactMove(dt, _playersKeys);
@@ -112,6 +116,9 @@ void Server::newClient()
     out << _world->_playerSpeed;
 
     newClient->write(packet);
+    if (_inBreak)
+        qDebug() << "disable the break mode";
+    _inBreak = false;
 
     _clients << newClient;
 
@@ -161,6 +168,11 @@ void Server::clientOut()
 
     qDebug() << "Client deco : " << socket->peerAddress().toString();
     _clients.removeOne(socket);
+    if (_clients.isEmpty()) {
+        _inBreak = true;
+        qDebug() << "go in break mode";
+    }
+
     socket->deleteLater();
 }
 

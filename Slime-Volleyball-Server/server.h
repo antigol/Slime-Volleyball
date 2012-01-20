@@ -38,6 +38,8 @@ private:
 
     quint16 _portNumber;
     int _timerId;
+
+    bool _inBreak;
 };
 
 #endif // SERVER_H
