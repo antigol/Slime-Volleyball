@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -43,9 +44,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectSlot()
 {
+    QSettings set;
+
     _socket->abort();
-    QString srv = QInputDialog::getText(this, "server", "server", QLineEdit::Normal, "localhost");
+    QString srv = QInputDialog::getText(this, "server", "server", QLineEdit::Normal, set.value("url", "localhost").toString());
     if (!srv.isEmpty()) {
+        set.setValue("url", srv);
         _socket->connectToHost(srv, 2424, QIODevice::ReadWrite);
     }
 }
@@ -86,6 +90,15 @@ void MainWindow::dataReceived()
 
     if (_socket->bytesAvailable() < _packetSize)
         return;
+
+    if (_socket->bytesAvailable() > _packetSize) {
+        qDebug() << "more than packet size, skip data... (" << _socket->bytesAvailable() << ")";
+        in.skipRawData(_packetSize);
+        _packetSize = 0;
+        dataReceived();
+        return;
+    }
+
 
     if (_packetId == 1) {
         in >> _width;
@@ -129,11 +142,6 @@ void MainWindow::dataReceived()
         _time.restart();
         redraw();
         _drawMutex.unlock();
-    }
-
-    if (_socket->bytesAvailable() > _packetSize) {
-        qDebug() << "sa va trop vite !!";
-        dataReceived();
     }
 }
 
