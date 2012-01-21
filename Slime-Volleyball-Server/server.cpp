@@ -35,9 +35,6 @@ bool Server::startServer()
 
     world()->reset();
 
-    // démarre le jeu
-    startGame();
-
     return true;
 }
 
