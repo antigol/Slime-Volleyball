@@ -10,7 +10,7 @@ QT       += network
 QT       -= gui
 
 
-TARGET = slimevolleyball-server
+TARGET    = slimevbd
 CONFIG   += console
 CONFIG   -= app_bundle
 
