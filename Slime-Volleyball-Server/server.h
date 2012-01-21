@@ -17,13 +17,16 @@ public:
 
     void setPort(quint16 port);
     World *world();
-    bool play();
-    void stop();
+    bool startServer();
+    void stopServer();
+
+    void startGame();
+    void stopGame();
 
 private slots:
-    void newClient();
-    void dataReceived();
+    void clientIn();
     void clientOut();
+    void dataReceived();
 
 private:
     void timerEvent(QTimerEvent *);
@@ -33,13 +36,12 @@ private:
     QMutex _runMutex;
     QTcpServer *_server;
     QList<QTcpSocket *> _clients;
-    bool _stopServer;
     World::Movements _playersKeys[2];
 
     quint16 _portNumber;
     int _timerId;
 
-    bool _inBreak;
+    bool _isRunning;
 };
 
 #endif // SERVER_H

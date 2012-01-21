@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     server.world()->_ballMinimumSpeed = parser.get("ballMin", 100.0).toDouble();
 
     // todo: lancer le serveur
-    if (!server.play())
+    if (!server.startServer())
         return -1;
 
     return a.exec();

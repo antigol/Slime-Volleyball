@@ -16,49 +16,146 @@ Server::Server(QObject *parent) :
 
 Server::~Server()
 {
-    stop();
+    stopServer();
     delete _world;
 }
 
-bool Server::play()
+bool Server::startServer()
 {
-    if (_timerId != 0)
-        stop();
+    stopServer();
 
-    // initialisation
-    _inBreak = true;
+    // démarre le serveur
     if (_server->listen(QHostAddress::Any, _portNumber)) {
-        qDebug() << "server start to listen on port : " << _portNumber;
-        connect(_server, SIGNAL(newConnection()), this, SLOT(newClient()));
+        qDebug() << "Server started to listen on port : " << _portNumber;
+        connect(_server, SIGNAL(newConnection()), this, SLOT(clientIn()));
     } else {
-        qDebug() << "server can't start on port : " << _portNumber;
+        qDebug() << "Server can't start on port : " << _portNumber;
         return false;
     }
 
     world()->reset();
 
-    _time.start();
-    _timerId = startTimer(50);
+    // démarre le jeu
+    startGame();
 
-    return (_timerId != 0);
+    return true;
 }
 
-void Server::stop()
+void Server::stopServer()
 {
-    // arrêt
-    _stopServer = true;
-    killTimer(_timerId);
-    _timerId = 0;
+    // arrêt du jeu
+    stopGame();
+    // arrêt du serveur
     _server->close();
     _clients.clear();
+
     qDebug("Server stopped");
+}
+
+void Server::startGame()
+{
+    _isRunning = true;
+
+    _time.start();
+
+    if (_timerId == 0)
+        _timerId = startTimer(50);
+
+    qDebug("Game started");
+}
+
+void Server::stopGame()
+{
+    _isRunning = false;
+
+    if (_timerId != 0)
+        killTimer(_timerId);
+    _timerId = 0;
+
+    qDebug("Game stopped");
+}
+
+void Server::clientIn()
+{
+    QTcpSocket *newClient = _server->nextPendingConnection();
+
+    // Création du paquet {initialisation}
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+    out << (quint8)1;
+    out.setFloatingPointPrecision(QDataStream::DoublePrecision);
+    out << _world->_width;
+    out << _world->_height;
+    out << _world->_netHeight;
+    out << _world->_ballRadius;
+    out << _world->_slimeRadius;
+    out << _world->_playerSpeed;
+
+    newClient->write(packet);
+
+    _clients << newClient;
+
+    connect(newClient, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+    connect(newClient, SIGNAL(disconnected()), this, SLOT(clientOut()));
+
+    if (_clients.size() == 1)
+        startGame();
+
+    qDebug() << "ClientIn : " << newClient->peerAddress().toString();
+}
+
+void Server::clientOut()
+{
+    QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
+    if (socket == 0)
+        return;
+
+    _clients.removeOne(socket);
+
+    socket->deleteLater();
+
+    if (_clients.size() == 0)
+        stopGame();
+
+    qDebug() << "ClientOut : " << socket->peerAddress().toString();
+}
+
+void Server::dataReceived()
+{
+    QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
+    if (socket == 0)
+        return;
+
+    qint64 packetSize = 2 * sizeof (quint16);
+    if (socket->bytesAvailable() < packetSize)
+        return;
+
+    QByteArray packet = socket->readAll();
+    packet = packet.right(packetSize);
+
+    QDataStream in(&packet, QIODevice::ReadOnly);
+    quint16 keys1;
+    quint16 keys2;
+    in >> keys1;
+    in >> keys2;
+
+//    qDebug() << "keys 1 :" << keys1 << " keys 2 :" << keys2;
+
+    if (_runMutex.tryLock()) {
+        if (!(keys1 & 0x8))
+            _playersKeys[0] = (World::Movements)keys1;
+        if (!(keys2 & 0x8))
+            _playersKeys[1] = (World::Movements)keys2;
+        double dt = (double)_time.restart() / 1000.0;
+        _world->exactMove(dt, _playersKeys);
+        _runMutex.unlock();
+    } else {
+        qDebug("Cannot lock run mutex !");
+    }
 }
 
 void Server::timerEvent(QTimerEvent *)
 {
-    if (_inBreak)
-        return;
-
     _runMutex.lock();
     double dt = (double)_time.restart() / 1000.0;
     _world->exactMove(dt, _playersKeys);
@@ -84,96 +181,9 @@ void Server::timerEvent(QTimerEvent *)
     out << (quint16)_world->_score[0];
     out << (quint16)_world->_score[1];
 
-    //    qDebug() << "bx" << _world->_ballActualPos.x();
-    //    qDebug() << "by" << _world->_ballActualPos.y();
-    //        qDebug() << "p1" << _world->playerActualPosition(0).x();
-    //        qDebug() << "p1" << _world->playerActualPosition(0).y();
-    //        qDebug() << "p2" << _world->playerActualPosition(1).x();
-    //        qDebug() << "p2" << _world->playerActualPosition(1).y();
-    //        qDebug() << "s1" << _world->actualScore(0);
-    //        qDebug() << "s2" << _world->actualScore(1);
-
     for (int i = 0; i < _clients.size(); ++i) {
         _clients[i]->write(packet);
     }
-}
-
-void Server::newClient()
-{
-    QTcpSocket *newClient = _server->nextPendingConnection();
-    qDebug() << "Nouveau client : " << newClient->peerAddress().toString();
-
-    // Création du paquet {initialisation}
-    QByteArray packet;
-    QDataStream out(&packet, QIODevice::WriteOnly);
-    out << (quint8)1;
-    out.setFloatingPointPrecision(QDataStream::DoublePrecision);
-    out << _world->_width;
-    out << _world->_height;
-    out << _world->_netHeight;
-    out << _world->_ballRadius;
-    out << _world->_slimeRadius;
-    out << _world->_playerSpeed;
-
-    newClient->write(packet);
-    if (_inBreak)
-        qDebug() << "disable the break mode";
-    _inBreak = false;
-
-    _clients << newClient;
-
-    connect(newClient, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-    connect(newClient, SIGNAL(disconnected()), this, SLOT(clientOut()));
-}
-
-void Server::dataReceived()
-{
-    QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
-    if (socket == 0)
-        return;
-
-    qint64 packetSize = 2 * sizeof (quint16);
-    if (socket->bytesAvailable() < packetSize)
-        return;
-
-    QByteArray packet = socket->readAll();
-    packet = packet.right(packetSize);
-
-    QDataStream in(&packet, QIODevice::ReadOnly);
-    quint16 keys1;
-    quint16 keys2;
-    in >> keys1;
-    in >> keys2;
-
-    qDebug() << "k1 :" << keys1 << " k2 :" << keys2;
-
-    if (_runMutex.tryLock()) {
-        if (!(keys1 & 0x8))
-            _playersKeys[0] = (World::Movements)keys1;
-        if (!(keys2 & 0x8))
-            _playersKeys[1] = (World::Movements)keys2;
-        double dt = (double)_time.restart() / 1000.0;
-        _world->exactMove(dt, _playersKeys);
-        _runMutex.unlock();
-    } else {
-        qDebug("tu envoie trop de paquet ?");
-    }
-}
-
-void Server::clientOut()
-{
-    QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
-    if (socket == 0)
-        return;
-
-    qDebug() << "Client deco : " << socket->peerAddress().toString();
-    _clients.removeOne(socket);
-    if (_clients.isEmpty()) {
-        _inBreak = true;
-        qDebug() << "go in break mode";
-    }
-
-    socket->deleteLater();
 }
 
 void Server::setPort(quint16 port)
